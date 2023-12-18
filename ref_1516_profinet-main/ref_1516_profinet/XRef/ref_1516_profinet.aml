@@ -1,0 +1,2409 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CAEXFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" FileName="ref_1516_profinet.aml" SchemaVersion="2.15" xsi:noNamespaceSchemaLocation="CAEX_ClassModel_V2.15.xsd">
+  <AdditionalInformation>
+    <WriterHeader>
+      <WriterName>Totally Integrated Automation Portal</WriterName>
+      <WriterID>1d4fcebb-1ad6-4881-b01d-bca335d94a46:V1.0</WriterID>
+      <WriterVendor>Siemens AG</WriterVendor>
+      <WriterVendorURL>www.siemens.com</WriterVendorURL>
+      <WriterVersion>1501</WriterVersion>
+      <WriterRelease>1501.0.2801.1</WriterRelease>
+      <LastWritingDateTime>2023-12-07T22:10:12.7449396Z</LastWritingDateTime>
+    </WriterHeader>
+  </AdditionalInformation>
+  <AdditionalInformation AutomationMLVersion="2.0" />
+  <AdditionalInformation DocumentVersions="Recommendations">
+    <Document DocumentIdentifier="AR APC" Version="1.0.0" />
+  </AdditionalInformation>
+  <InstanceHierarchy Name="APC Sample Instance Hierarchy">
+    <InternalElement ID="97da6557-ae5e-4f04-89f5-6531265df70f" Name="ref_1516_profinet">
+      <Attribute Name="ProjectManufacturer" AttributeDataType="xs:string" />
+      <Attribute Name="ProjectSign" AttributeDataType="xs:string" />
+      <Attribute Name="ProjectRevision" AttributeDataType="xs:string" />
+      <Attribute Name="ProjectInformation" AttributeDataType="xs:string" />
+      <InternalElement ID="15940995-3bd3-4233-89ed-af098ca5a490" Name="PN/IE_1">
+        <Attribute Name="Type" AttributeDataType="xs:string">
+          <Value>Ethernet</Value>
+        </Attribute>
+        <ExternalInterface ID="dc22911a-13a4-4e55-ad72-56db6d6c4425" Name="LogicalEndPoint_Subnet" RefBaseClassPath="CommunicationInterfaceClassLib/LogicalEndPoint" />
+        <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/Subnet" />
+      </InternalElement>
+      <InternalElement ID="9b0a76f3-97a6-4f98-9cc5-abe9f0f8153b" Name="PN/IE_2">
+        <Attribute Name="Type" AttributeDataType="xs:string">
+          <Value>Ethernet</Value>
+        </Attribute>
+        <ExternalInterface ID="67b71444-ce86-4ff3-a0bd-b969c365c352" Name="LogicalEndPoint_Subnet" RefBaseClassPath="CommunicationInterfaceClassLib/LogicalEndPoint" />
+        <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/Subnet" />
+      </InternalElement>
+      <InternalElement ID="0916542c-ff6f-4693-9385-27a49ad951dd" Name="PROFIBUS_1">
+        <Attribute Name="Type" AttributeDataType="xs:string">
+          <Value>Profibus</Value>
+        </Attribute>
+        <ExternalInterface ID="ee5ba2b8-c9da-4a9f-8e62-f37728430ae0" Name="LogicalEndPoint_Subnet" RefBaseClassPath="CommunicationInterfaceClassLib/LogicalEndPoint" />
+        <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/Subnet" />
+      </InternalElement>
+      <InternalElement ID="153e5b95-5380-4038-bab7-e49fd0aa304e" Name="Dispositivi non raggruppati">
+        <InternalElement ID="94d4d759-937f-47ec-a3ab-77dbd8c3ede2" Name="ET 200S station_1">
+          <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+            <Value>System:Device.ET200S</Value>
+          </Attribute>
+          <InternalElement ID="a615d442-79e0-49c9-bb15-a312f45ed77e" Name="Telaio di montaggio_0">
+            <Attribute Name="TypeName" AttributeDataType="xs:string">
+              <Value>Rail</Value>
+            </Attribute>
+            <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+              <Value>0</Value>
+            </Attribute>
+            <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+              <Value>false</Value>
+            </Attribute>
+            <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+              <Value>System:Rack.ET200S</Value>
+            </Attribute>
+            <InternalElement ID="dc3b6df7-77f7-4b13-8e4d-a766bd9fa1c9" Name="IO Device_1_1">
+              <Attribute Name="TypeName" AttributeDataType="xs:string">
+                <Value>IM 151-3 PN HF</Value>
+              </Attribute>
+              <Attribute Name="DeviceItemType" AttributeDataType="xs:string">
+                <Value>HeadModule</Value>
+              </Attribute>
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>0</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>false</Value>
+              </Attribute>
+              <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+                <Value>OrderNumber:6ES7 151-3BA23-0AB0</Value>
+              </Attribute>
+              <Attribute Name="FirmwareVersion" AttributeDataType="xs:string">
+                <Value>V6.1</Value>
+              </Attribute>
+              <InternalElement ID="ab16abc2-225f-43d2-b276-5b7b572e3fb3" Name="IO Device_1_1">
+                <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                  <Value>0</Value>
+                </Attribute>
+                <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                  <Value>true</Value>
+                </Attribute>
+                <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+              </InternalElement>
+              <InternalElement ID="6d64b259-2c4e-443f-ac49-e20ba5d18ddf" Name="Interfaccia PROFINET">
+                <Attribute Name="Label" AttributeDataType="xs:string">
+                  <Value>X1</Value>
+                </Attribute>
+                <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+                <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                  <Value>true</Value>
+                </Attribute>
+                <ExternalInterface ID="488a8d4e-ecad-41f1-a407-6e740e966da3" Name="LogicalEndPoint_Interface" RefBaseClassPath="CommunicationInterfaceClassLib/LogicalEndPoint" />
+                <InternalElement ID="2b74f0a3-f085-4814-845f-799f6f7b2e26" Name="IE1">
+                  <Attribute Name="Type" AttributeDataType="xs:string">
+                    <Value>Ethernet</Value>
+                  </Attribute>
+                  <Attribute Name="NetworkAddress" AttributeDataType="xs:string">
+                    <Value>192.168.17.165</Value>
+                  </Attribute>
+                  <Attribute Name="SubnetMask" AttributeDataType="xs:string">
+                    <Value>255.255.255.0</Value>
+                  </Attribute>
+                  <Attribute Name="IpProtocolSelection" AttributeDataType="xs:string">
+                    <Value>Project</Value>
+                  </Attribute>
+                  <Attribute Name="RouterAddress" AttributeDataType="xs:string">
+                    <Value>192.168.17.129</Value>
+                  </Attribute>
+                  <ExternalInterface ID="111eba9e-a7b4-4dc5-9c33-f89a7c744ed3" Name="LogicalEndPoint_Node" RefBaseClassPath="CommunicationInterfaceClassLib/LogicalEndPoint" />
+                  <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/Node" />
+                </InternalElement>
+                <InternalElement ID="fb9cbaf0-fc85-42d7-9420-8a4916673ce4" Name="Port_1">
+                  <Attribute Name="Label" AttributeDataType="xs:string">
+                    <Value>P1</Value>
+                  </Attribute>
+                  <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                    <Value>1</Value>
+                  </Attribute>
+                  <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                    <Value>true</Value>
+                  </Attribute>
+                  <ExternalInterface ID="2244743c-9336-4a8d-a102-d247ef82e6cf" Name="CommunicationPortInterface" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/CommunicationPortInterface" />
+                  <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/CommunicationPort" />
+                </InternalElement>
+                <InternalElement ID="0c1a4e3f-d025-4199-b5ab-bc9608b7ae41" Name="Port_2">
+                  <Attribute Name="Label" AttributeDataType="xs:string">
+                    <Value>P2</Value>
+                  </Attribute>
+                  <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                    <Value>2</Value>
+                  </Attribute>
+                  <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                    <Value>true</Value>
+                  </Attribute>
+                  <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/CommunicationPort" />
+                </InternalElement>
+                <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/CommunicationInterface" />
+              </InternalElement>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <InternalElement ID="c086137f-9289-46a6-b608-249d3da55fe1" Name="PM-E DC24..48V_1">
+              <Attribute Name="TypeName" AttributeDataType="xs:string">
+                <Value>PM-E 24 to 48VDC</Value>
+              </Attribute>
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>1</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>false</Value>
+              </Attribute>
+              <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+                <Value>OrderNumber:6ES7 138-4CA50-0AB0</Value>
+              </Attribute>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <InternalElement ID="08f7ed1e-5a16-41f7-9f81-6aac53b238f6" Name="2AI x U ST_1">
+              <Attribute Name="TypeName" AttributeDataType="xs:string">
+                <Value>2AI x U ST</Value>
+              </Attribute>
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>2</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>false</Value>
+              </Attribute>
+              <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+                <Value>OrderNumber:6ES7 134-4FB01-0AB0</Value>
+              </Attribute>
+              <Attribute Name="Address">
+                <RefSemantic CorrespondingAttributePath="OrderedListType" />
+                <Attribute Name="1">
+                  <Attribute Name="StartAddress" AttributeDataType="xs:int">
+                    <Value>256</Value>
+                  </Attribute>
+                  <Attribute Name="Length" AttributeDataType="xs:int">
+                    <Value>32</Value>
+                  </Attribute>
+                  <Attribute Name="IoType" AttributeDataType="xs:string">
+                    <Value>Input</Value>
+                  </Attribute>
+                </Attribute>
+              </Attribute>
+              <ExternalInterface ID="d5d3caeb-9834-4b59-8af2-394e34e5c2ee" Name="Channel_AI_0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Analog</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>0</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>16</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="82a3f8e3-21f2-48e7-806c-4e11969e6909" Name="Channel_AI_1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Analog</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>16</Value>
+                </Attribute>
+              </ExternalInterface>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <InternalElement ID="e9bc4341-8945-4c76-ad86-f326b0751d08" Name="2AO x U ST_1">
+              <Attribute Name="TypeName" AttributeDataType="xs:string">
+                <Value>2AO x U ST</Value>
+              </Attribute>
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>3</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>false</Value>
+              </Attribute>
+              <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+                <Value>OrderNumber:6ES7 135-4FB01-0AB0</Value>
+              </Attribute>
+              <Attribute Name="Address">
+                <RefSemantic CorrespondingAttributePath="OrderedListType" />
+                <Attribute Name="1">
+                  <Attribute Name="StartAddress" AttributeDataType="xs:int">
+                    <Value>256</Value>
+                  </Attribute>
+                  <Attribute Name="Length" AttributeDataType="xs:int">
+                    <Value>32</Value>
+                  </Attribute>
+                  <Attribute Name="IoType" AttributeDataType="xs:string">
+                    <Value>Output</Value>
+                  </Attribute>
+                </Attribute>
+              </Attribute>
+              <ExternalInterface ID="9ed45675-359e-4ce1-9977-48100c728a57" Name="Channel_AO_0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Analog</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Output</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>0</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>16</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="897d5b6c-47fa-4e19-ab01-18dd07be1555" Name="Channel_AO_1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Analog</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Output</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>16</Value>
+                </Attribute>
+              </ExternalInterface>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <InternalElement ID="462cc3bc-876d-451c-8fa1-42384eff02ea" Name="2DI x DC24V HF_1">
+              <Attribute Name="TypeName" AttributeDataType="xs:string">
+                <Value>2DI x 24VDC HF</Value>
+              </Attribute>
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>4</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>false</Value>
+              </Attribute>
+              <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+                <Value>OrderNumber:6ES7 131-4BB01-0AB0</Value>
+              </Attribute>
+              <Attribute Name="Address">
+                <RefSemantic CorrespondingAttributePath="OrderedListType" />
+                <Attribute Name="1">
+                  <Attribute Name="StartAddress" AttributeDataType="xs:int">
+                    <Value>21</Value>
+                  </Attribute>
+                  <Attribute Name="Length" AttributeDataType="xs:int">
+                    <Value>2</Value>
+                  </Attribute>
+                  <Attribute Name="IoType" AttributeDataType="xs:string">
+                    <Value>Input</Value>
+                  </Attribute>
+                </Attribute>
+              </Attribute>
+              <ExternalInterface ID="f29da356-c1b8-49a8-848d-c4a99d9d7683" Name="Channel_DI_0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>0</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="35a2576c-796e-4788-a0ae-c576158ca388" Name="Channel_DI_1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <InternalElement ID="e56af542-0b40-4db1-965a-00b4a45f78be" Name="8DI x DC24V_1">
+              <Attribute Name="TypeName" AttributeDataType="xs:string">
+                <Value>8DI x 24VDC</Value>
+              </Attribute>
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>5</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>false</Value>
+              </Attribute>
+              <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+                <Value>OrderNumber:6ES7 131-4BF00-0AA0</Value>
+              </Attribute>
+              <Attribute Name="Address">
+                <RefSemantic CorrespondingAttributePath="OrderedListType" />
+                <Attribute Name="1">
+                  <Attribute Name="StartAddress" AttributeDataType="xs:int">
+                    <Value>20</Value>
+                  </Attribute>
+                  <Attribute Name="Length" AttributeDataType="xs:int">
+                    <Value>8</Value>
+                  </Attribute>
+                  <Attribute Name="IoType" AttributeDataType="xs:string">
+                    <Value>Input</Value>
+                  </Attribute>
+                </Attribute>
+              </Attribute>
+              <ExternalInterface ID="570c73e2-45d5-45e1-a452-68c00fbd72b8" Name="Channel_DI_0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>0</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="f3d2a85a-d146-48b5-be07-0a27efab8851" Name="Channel_DI_1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="e5ba0217-2083-4622-988d-cf6cd4df5d88" Name="Channel_DI_2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>2</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="07b027cf-dc23-46ea-8187-23dc240b4840" Name="Channel_DI_3" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>3</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="9c4b02b8-47dc-4b56-83e4-d02070ee6b12" Name="Channel_DI_4" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>4</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="d1c51ee8-4f39-457b-985d-792769ee87fd" Name="Channel_DI_5" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>5</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="8cf0f82a-6bfd-470d-ab32-73a79cd6793e" Name="Channel_DI_6" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>6</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="690e7d36-0e72-4665-8ca9-dfefdfbc1bfc" Name="Channel_DI_7" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>7</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <InternalElement ID="bd0a1543-165e-4654-821b-09317b0729e2" Name="PM-E DC24V_1">
+              <Attribute Name="TypeName" AttributeDataType="xs:string">
+                <Value>PM-E 24VDC</Value>
+              </Attribute>
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>6</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>false</Value>
+              </Attribute>
+              <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+                <Value>OrderNumber:6ES7 138-4CA01-0AA0</Value>
+              </Attribute>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <InternalElement ID="65fc1d40-aa90-4f1b-9fa0-bea7d7f03a55" Name="2DO x DC24V / 0,5A HF_1">
+              <Attribute Name="TypeName" AttributeDataType="xs:string">
+                <Value>2DO x 24VDC / 0.5A HF</Value>
+              </Attribute>
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>7</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>false</Value>
+              </Attribute>
+              <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+                <Value>OrderNumber:6ES7 132-4BB01-0AB0</Value>
+              </Attribute>
+              <Attribute Name="Address">
+                <RefSemantic CorrespondingAttributePath="OrderedListType" />
+                <Attribute Name="1">
+                  <Attribute Name="StartAddress" AttributeDataType="xs:int">
+                    <Value>12</Value>
+                  </Attribute>
+                  <Attribute Name="Length" AttributeDataType="xs:int">
+                    <Value>2</Value>
+                  </Attribute>
+                  <Attribute Name="IoType" AttributeDataType="xs:string">
+                    <Value>Output</Value>
+                  </Attribute>
+                </Attribute>
+              </Attribute>
+              <ExternalInterface ID="19ec0f4a-c50b-4f1c-a3f4-5ef47cb1dbcf" Name="Channel_DO_0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Output</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>0</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="7ce4bb77-2031-4ee8-ac49-5146d2523671" Name="Channel_DO_1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Output</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <InternalElement ID="72ade310-ec21-4cc1-8d2f-63b5e600129b" Name="2DO x DC24V / 0,5A HF_2">
+              <Attribute Name="TypeName" AttributeDataType="xs:string">
+                <Value>2DO x 24VDC / 0.5A HF</Value>
+              </Attribute>
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>8</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>false</Value>
+              </Attribute>
+              <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+                <Value>OrderNumber:6ES7 132-4BB01-0AB0</Value>
+              </Attribute>
+              <Attribute Name="Address">
+                <RefSemantic CorrespondingAttributePath="OrderedListType" />
+                <Attribute Name="1">
+                  <Attribute Name="StartAddress" AttributeDataType="xs:int">
+                    <Value>13</Value>
+                  </Attribute>
+                  <Attribute Name="Length" AttributeDataType="xs:int">
+                    <Value>2</Value>
+                  </Attribute>
+                  <Attribute Name="IoType" AttributeDataType="xs:string">
+                    <Value>Output</Value>
+                  </Attribute>
+                </Attribute>
+              </Attribute>
+              <ExternalInterface ID="21525faf-d0be-4a9f-bd12-1a5fcb4ed600" Name="Channel_DO_0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Output</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>0</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="1eaa5e41-11c0-4b2c-8002-4f2a8bb87614" Name="Channel_DO_1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Output</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <InternalElement ID="094249b2-f654-4435-981e-9605e366ab95" Name="2DO x DC24V / 0,5A HF_3">
+              <Attribute Name="TypeName" AttributeDataType="xs:string">
+                <Value>2DO x 24VDC / 0.5A HF</Value>
+              </Attribute>
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>9</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>false</Value>
+              </Attribute>
+              <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+                <Value>OrderNumber:6ES7 132-4BB01-0AB0</Value>
+              </Attribute>
+              <Attribute Name="Address">
+                <RefSemantic CorrespondingAttributePath="OrderedListType" />
+                <Attribute Name="1">
+                  <Attribute Name="StartAddress" AttributeDataType="xs:int">
+                    <Value>14</Value>
+                  </Attribute>
+                  <Attribute Name="Length" AttributeDataType="xs:int">
+                    <Value>2</Value>
+                  </Attribute>
+                  <Attribute Name="IoType" AttributeDataType="xs:string">
+                    <Value>Output</Value>
+                  </Attribute>
+                </Attribute>
+              </Attribute>
+              <ExternalInterface ID="50160074-3ec7-4e54-af6e-88552fac17e6" Name="Channel_DO_0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Output</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>0</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="e6f61a69-7298-4931-85aa-45c312c67b95" Name="Channel_DO_1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Output</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <InternalElement ID="b8ce61dd-7c60-43d9-8b6d-e245cd52a10d" Name="2DO x DC24V / 0,5A HF_4">
+              <Attribute Name="TypeName" AttributeDataType="xs:string">
+                <Value>2DO x 24VDC / 0.5A HF</Value>
+              </Attribute>
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>10</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>false</Value>
+              </Attribute>
+              <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+                <Value>OrderNumber:6ES7 132-4BB01-0AB0</Value>
+              </Attribute>
+              <Attribute Name="Address">
+                <RefSemantic CorrespondingAttributePath="OrderedListType" />
+                <Attribute Name="1">
+                  <Attribute Name="StartAddress" AttributeDataType="xs:int">
+                    <Value>15</Value>
+                  </Attribute>
+                  <Attribute Name="Length" AttributeDataType="xs:int">
+                    <Value>2</Value>
+                  </Attribute>
+                  <Attribute Name="IoType" AttributeDataType="xs:string">
+                    <Value>Output</Value>
+                  </Attribute>
+                </Attribute>
+              </Attribute>
+              <ExternalInterface ID="175c46f1-de29-4385-a410-7f596a12ffd8" Name="Channel_DO_0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Output</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>0</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="88220328-9f6b-4faf-9c5d-3e50cc86c3e4" Name="Channel_DO_1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Output</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+          </InternalElement>
+          <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/Device" />
+        </InternalElement>
+        <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceUserFolder" />
+      </InternalElement>
+      <InternalElement ID="ed01f0b6-2795-4cf0-8722-9cac9ed0a736" Name="S71500/ET200MP station_1">
+        <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+          <Value>System:Device.S71500</Value>
+        </Attribute>
+        <InternalElement ID="2cf4a993-c516-4334-8e81-fcef9670fc74" Name="Telaio di montaggio_0">
+          <Attribute Name="TypeName" AttributeDataType="xs:string">
+            <Value>Rack</Value>
+          </Attribute>
+          <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+            <Value>0</Value>
+          </Attribute>
+          <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+            <Value>false</Value>
+          </Attribute>
+          <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+            <Value>OrderNumber:6ES7 590-1***0-0AA0</Value>
+          </Attribute>
+          <InternalElement ID="c0b28afe-55f4-4930-9e71-f110aeb5004d" Name="PM 190W 120/230VAC">
+            <Attribute Name="TypeName" AttributeDataType="xs:string">
+              <Value>PM 190W 120/230VAC</Value>
+            </Attribute>
+            <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+              <Value>0</Value>
+            </Attribute>
+            <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+              <Value>false</Value>
+            </Attribute>
+            <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+              <Value>OrderNumber:6EP1333-4BA00</Value>
+            </Attribute>
+            <InternalElement ID="a52f8397-6d08-4ca0-b523-70e89b66d7e3" Name="_1">
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>1</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>true</Value>
+              </Attribute>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+          </InternalElement>
+          <InternalElement ID="12497ebe-eb76-4b6d-a660-f6bc8d7de57f" Name="PLC_1">
+            <Attribute Name="TypeName" AttributeDataType="xs:string">
+              <Value>CPU 1516-3 PN/DP</Value>
+            </Attribute>
+            <Attribute Name="DeviceItemType" AttributeDataType="xs:string">
+              <Value>CPU</Value>
+            </Attribute>
+            <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+              <Value>1</Value>
+            </Attribute>
+            <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+              <Value>false</Value>
+            </Attribute>
+            <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+              <Value>OrderNumber:6ES7 516-3AN01-0AB0</Value>
+            </Attribute>
+            <Attribute Name="PlantDesignation IEC" AttributeDataType="xs:string">
+              <Value>=PLC+STN1-A1</Value>
+            </Attribute>
+            <Attribute Name="FirmwareVersion" AttributeDataType="xs:string">
+              <Value>V2.6</Value>
+            </Attribute>
+            <InternalElement ID="cf22b53d-7dea-4159-9bc9-28129def9808" Name="Tabella delle variabili standard">
+              <ExternalInterface ID="23c7fcc9-5365-404f-b8a8-fa5d0a5da46a" Name="DI0.0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I0.0</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="81b011ad-d194-43d2-845f-c393a967d177" Name="DI0.1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I0.1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="3e576950-a1f8-4982-a0f5-4ed39a737af4" Name="DI0.2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I0.2</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="a698f774-2312-4c91-b2c9-cdbd57dcc4fa" Name="DI0.3" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I0.3</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="54d27431-2f00-47a9-b0bc-72c09961c7af" Name="DI0.4" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I0.4</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="10459b2c-dea7-46f3-a7b6-843e139fdcee" Name="DI0.5" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I0.5</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="faa563b4-20c9-4329-b3af-8de48c3bb054" Name="PV1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I0.6</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="64c72169-771c-4f7f-a7a0-7a4f5102c756" Name="PR1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I0.7</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="0837f7f4-54c5-43c0-87bd-2278c4fec429" Name="PV2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I1.0</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="13819d61-53dd-4afb-a96e-33d02063e837" Name="PR2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I1.1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="2fa1e367-0391-4b9c-805b-a7ff0f0dfcfb" Name="JM1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I1.2</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="c5beb673-9644-4564-9a2a-d4c03d885ae4" Name="JM2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I1.3</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="102c59a1-3ba1-4a4c-b27d-dbdcf582ff43" Name="JMA" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I1.4</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="a433cd2a-e4e0-415b-bc85-9e1fbeba11c8" Name="JMI" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I1.5</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="b254cf70-71e5-4fb9-adc4-ff1600f19bce" Name="ACK" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I1.6</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="206d7a41-e36b-4467-bc6c-84630fdb8f58" Name="EMERG" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I1.7</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="e4a36392-25cc-4435-b2ed-058a8bdd9a81" Name="DI2.0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I2.0</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="83bc8f4c-e326-4c66-8aba-29b72b76d0a2" Name="DI2.1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I2.1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="6d121d92-7c2d-41d7-8d33-2721af655f01" Name="a_0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I2.2</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="8da6aec2-202d-4523-b218-970bdf4049fa" Name="a_1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I2.3</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="75d118f1-2a30-4000-aa8b-2e37a7933150" Name="b_0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I2.4</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="b712eecf-33cf-4702-a625-00c25af0c735" Name="b_1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I2.5</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="86648782-fca9-4c2d-b6e5-7304b5f9ffde" Name="DI2.6" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I2.6</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="54aecc57-529e-4852-8fb1-3030cb609818" Name="DI2.7" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I2.7</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="e4375bdf-2a56-45b0-a280-59f0700b4c9b" Name="DI3.0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I3.0</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="70442836-e72a-4e12-bdc1-f92739cc4405" Name="DI3.1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I3.1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="bac2355d-64ee-4bb9-826b-3152e166678c" Name="DI3.2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I3.2</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="c5cb0296-5e17-4d94-858a-db1b56903844" Name="DI3.3" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I3.3</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="a9daf5b0-ac95-4f30-8c2c-5a70de59cfa5" Name="DI3.4" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I3.4</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="b618b64f-5dc2-443e-8977-d68821dfe1ae" Name="DI3.5" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I3.5</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="452f1790-b3a9-41fc-8c14-299b0090caff" Name="DI3.6" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I3.6</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="c16dadc5-8514-4e47-9241-d59257ca32bb" Name="DI3.7" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I3.7</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="cd485672-b69e-4eb3-b8ea-65b8f3d96d8b" Name="DO0.0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q0.0</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="11bdbca9-0a50-4191-9b88-439c70719519" Name="DO0.1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q0.1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="86bc9393-c58b-42f7-8f95-525a669fdb1d" Name="DO0.2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q0.2</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="c21194c8-d02f-430c-9b17-65aa2cc176a6" Name="DO0.3" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q0.3</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="cf8fd1c1-a18c-4be6-acdf-5cb5687f4e95" Name="DO0.4" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q0.4</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="6d4a3912-0384-4c18-b040-84955fb8afc8" Name="DO0.5" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q0.5</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="b68993ac-d6ed-44be-80ed-9a1c22fb32ff" Name="DO0.6" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q0.6</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="28bab948-9d88-4bba-91f8-5a7daec015b7" Name="DO0.7" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q0.7</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="249dfc83-b1f1-4a99-9615-14c64b5dc17b" Name="DO1.0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q1.0</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="d715b258-cc8b-4b59-a536-e6ff5de7e040" Name="DO1.1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q1.1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="426f0a61-57fe-4464-aa5f-2ddef5ffece3" Name="LV1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q1.2</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="f0f73230-53cd-49e4-927a-81b7b350d9a2" Name="LR1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q1.3</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="d55bad34-63bb-4537-bbea-05bd1c836c9b" Name="LV2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q1.4</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="a8eb386f-2037-4bfb-873e-d1a5bea165aa" Name="LR2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q1.5</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="3dd05972-df0b-4d1f-b106-fd7fa9584290" Name="LACK" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q1.6</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="f3c9a958-9824-4673-aaab-8e029876a5ce" Name="LSTOP" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q1.7</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="6bddc7d8-dff1-40e8-8608-5bdca6b952cf" Name="DO2.0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q2.0</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="338789c3-e9ff-4525-8f18-a9c9d6871be1" Name="DO2.1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q2.1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="869c4a7a-66f7-4a6d-a8e8-18ddb3d94340" Name="DO2.2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q2.2</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="2aa8c839-6477-41b3-8013-18ed6d14f133" Name="DO2.3" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q2.3</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="d942d57b-b25d-4fc2-9063-898a31a07291" Name="DO2.4" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q2.4</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="102335a8-64c0-48dd-ae12-eb5fa4001ea3" Name="DO2.5" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q2.5</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="9773de30-f8a3-47bf-9594-106c0d022bb6" Name="DO2.6" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q2.6</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="1f9143ad-11c5-4f4d-a50d-6bf0d88acd17" Name="DO2.7" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q2.7</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="895a6bc0-b3f8-4ec2-83ed-6541870a6a51" Name="DO3.0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q3.0</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="8290dab6-6a57-4199-b630-a31803daa659" Name="DO3.1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q3.1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="cc750379-15fe-40b2-830c-6d2bf9cd3c77" Name="DO3.2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q3.2</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="f8692230-e78e-4158-9962-56958c054c54" Name="DO3.3" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q3.3</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="474b9527-6d29-44ff-8a94-22ffdd492c0d" Name="DO3.4" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q3.4</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="6d3cad09-64c6-4ebb-bcca-3ce2a7d155fe" Name="DO3.5" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q3.5</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="53f25e82-9e66-4bc1-89ce-3adf54dbae03" Name="DO3.6" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q3.6</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="8beb026d-55a4-4138-860e-a3c909c13fae" Name="DO3.7" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q3.7</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="b726a7e5-6419-44b9-97a5-be4bdfb170e0" Name="POT0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>IW4</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="793f454f-b091-4257-9225-a57c359b397a" Name="POT1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>IW6</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="db92d2cd-e5b7-4512-a2ea-79320562ab91" Name="AI2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>IW8</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="40bf2329-97c6-4baa-a395-54060fbac500" Name="AI3" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>IW10</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="1b288b7b-e921-4574-97ab-2f5e47b86bd6" Name="AI4" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>IW12</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="1378db56-101e-4467-87c2-3aaef4b777d0" Name="AI5" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>IW14</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="e8f462a4-7c09-4ec1-98a0-aa1f0f1f7aeb" Name="AI6" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>IW16</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="1168a82d-fc56-4f7f-89eb-7574c30d1f41" Name="AI7" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>IW18</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="3e7aa7c0-3e4f-43fc-9a3c-777330642cc9" Name="AO0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>QW4</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="b1392a64-9409-4c86-884d-f10ef49dbc0a" Name="AO1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>QW6</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="b0d818c2-72d6-4748-a18b-093848f0e89e" Name="AO2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>QW8</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="aa4126af-48b5-49e8-a0c3-f65988c82d56" Name="AO3" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>QW10</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="dfbfffa0-e674-4d48-a5f0-5e2de53e861d" Name="YB+" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q13.0</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="54d5ebb3-4390-46bd-8cfc-47a6e5cb85e0" Name="YB-" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q13.1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="20724ab7-96c2-4dae-b3c4-47d11be30ef4" Name="YA+" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q12.0</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="bb822ea5-5c2f-43e5-9c22-906295f7a5ae" Name="YA-" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q12.1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="1353aa29-53c4-4da1-be9f-1c3699dbe168" Name="FC1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I21.0</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="b8d943d4-78f1-447c-92be-4cf729a3baab" Name="DO14.0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q14.0</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="debdd189-d95e-4f58-bb9a-7840019c054f" Name="DO14.1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q14.1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="30828d5d-04de-4d35-bb5c-8676cf04f505" Name="DO15.0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q15.0</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="a0b2e90a-361f-4a2b-a64b-0ea585b176f7" Name="DO15.1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>Q15.1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="557eab66-f5b7-48b4-a638-a8ea77a4555e" Name="AI8" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>IW256</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="ef82ec1b-2b8d-4a39-a078-eed50f3d7e25" Name="AI9" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>IW258</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="684721cb-78a0-4e9e-9298-c00080144057" Name="AO4" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>QW256</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="cc8d6099-f214-4f74-85b4-a3401adbf0c8" Name="AO5" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Int</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>QW258</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="6e6da622-258e-45c0-ab3e-3a0131c84a4a" Name="DI21.1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I21.1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="bd7500d7-74c3-4d52-a5c8-26b7b4333142" Name="DI20.0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I20.0</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="5bccc76a-906b-4b70-8997-3d3b66efa213" Name="DI20.1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I20.1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="a8bdd856-7be6-4bac-87c8-2cbfa7627fdb" Name="DI20.2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I20.2</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="f4d6148c-8b43-423e-ac16-4e81bd6e1c81" Name="DI20.3" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I20.3</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="46d66fff-68f4-4400-bbac-3d5f93daf72c" Name="DI20.4" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I20.4</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="0af02f18-0539-4472-af1c-ead6d2bcb18b" Name="DI20.5" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I20.5</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="6a07c2a9-a9ef-4400-90dc-fce6355e9055" Name="DI20.6" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I20.6</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="e388ed01-607a-4da7-9ee1-9f5443e734cc" Name="DI20.7" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Tag">
+                <Attribute Name="DataType" AttributeDataType="xs:string">
+                  <Value>Bool</Value>
+                </Attribute>
+                <Attribute Name="LogicalAddress" AttributeDataType="xs:string">
+                  <Value>I20.7</Value>
+                </Attribute>
+              </ExternalInterface>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/TagTable" />
+            </InternalElement>
+            <InternalElement ID="f5377f43-ed14-4182-ab50-9f991609dc0e" Name="Display CPU_1">
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>3</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>true</Value>
+              </Attribute>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <InternalElement ID="6a605939-1d74-4f17-b6b0-875838546566" Name="Dispositivo di lettura/scrittura scheda_1">
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>4</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>true</Value>
+              </Attribute>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <InternalElement ID="e46376c7-47ef-43b9-bdf8-5e90ff47676c" Name="OPC UA_1">
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>254</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>true</Value>
+              </Attribute>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <InternalElement ID="ce591672-0df4-40c5-aac0-7b96ff2e656d" Name="Interfaccia PROFINET_1">
+              <Attribute Name="Label" AttributeDataType="xs:string">
+                <Value>X1</Value>
+              </Attribute>
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>32768</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>true</Value>
+              </Attribute>
+              <InternalElement ID="b25ebd55-ade3-41e5-899d-92ce025e7b0f" Name="E1">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Ethernet</Value>
+                </Attribute>
+                <Attribute Name="NetworkAddress" AttributeDataType="xs:string">
+                  <Value>192.168.17.161</Value>
+                </Attribute>
+                <Attribute Name="SubnetMask" AttributeDataType="xs:string">
+                  <Value>255.255.255.0</Value>
+                </Attribute>
+                <Attribute Name="IpProtocolSelection" AttributeDataType="xs:string">
+                  <Value>Project</Value>
+                </Attribute>
+                <Attribute Name="RouterAddress" AttributeDataType="xs:string">
+                  <Value>192.168.17.129</Value>
+                </Attribute>
+                <ExternalInterface ID="ce6fcbc5-1124-429d-b05d-554f366d601a" Name="LogicalEndPoint_Node" RefBaseClassPath="CommunicationInterfaceClassLib/LogicalEndPoint" />
+                <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/Node" />
+              </InternalElement>
+              <InternalElement ID="a8477eac-279e-4fce-9059-85ab52c0ea19" Name="PROFINET IO-System">
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>100</Value>
+                </Attribute>
+                <ExternalInterface ID="05f0b193-0990-40a9-914e-1e252bfe1096" Name="LogicalEndPoint_IoSystem" RefBaseClassPath="CommunicationInterfaceClassLib/LogicalEndPoint" />
+                <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/IoSystem" />
+              </InternalElement>
+              <InternalElement ID="917ffd54-61ec-432a-ad1f-97a767c8026d" Name="Porta_1">
+                <Attribute Name="Label" AttributeDataType="xs:string">
+                  <Value>P1 R</Value>
+                </Attribute>
+                <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                  <Value>32769</Value>
+                </Attribute>
+                <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                  <Value>true</Value>
+                </Attribute>
+                <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/CommunicationPort" />
+              </InternalElement>
+              <InternalElement ID="c33cc948-4113-4d65-bc87-74de0d820ae0" Name="Porta_2">
+                <Attribute Name="Label" AttributeDataType="xs:string">
+                  <Value>P2 R</Value>
+                </Attribute>
+                <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                  <Value>32770</Value>
+                </Attribute>
+                <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                  <Value>true</Value>
+                </Attribute>
+                <ExternalInterface ID="455531ce-be26-4bc2-ac01-31cf57a036f7" Name="CommunicationPortInterface" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/CommunicationPortInterface" />
+                <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/CommunicationPort" />
+              </InternalElement>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/CommunicationInterface" />
+            </InternalElement>
+            <InternalElement ID="9915bde5-3b23-4919-9707-5ed9b526501e" Name="Interfaccia PROFINET_2">
+              <Attribute Name="Label" AttributeDataType="xs:string">
+                <Value>X2</Value>
+              </Attribute>
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>33024</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>true</Value>
+              </Attribute>
+              <InternalElement ID="fd3ab1a8-334e-43b8-8c91-de01300ed148" Name="E1">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Ethernet</Value>
+                </Attribute>
+                <Attribute Name="NetworkAddress" AttributeDataType="xs:string">
+                  <Value>192.168.0.161</Value>
+                </Attribute>
+                <Attribute Name="SubnetMask" AttributeDataType="xs:string">
+                  <Value>255.255.255.0</Value>
+                </Attribute>
+                <Attribute Name="IpProtocolSelection" AttributeDataType="xs:string">
+                  <Value>Project</Value>
+                </Attribute>
+                <ExternalInterface ID="a0937ae5-763e-4361-83f1-5979e364b981" Name="LogicalEndPoint_Node" RefBaseClassPath="CommunicationInterfaceClassLib/LogicalEndPoint" />
+                <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/Node" />
+              </InternalElement>
+              <InternalElement ID="20996914-9f53-4884-9690-d819ca1ab805" Name="Porta_1">
+                <Attribute Name="Label" AttributeDataType="xs:string">
+                  <Value>P1</Value>
+                </Attribute>
+                <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                  <Value>33025</Value>
+                </Attribute>
+                <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                  <Value>true</Value>
+                </Attribute>
+                <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/CommunicationPort" />
+              </InternalElement>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/CommunicationInterface" />
+            </InternalElement>
+            <InternalElement ID="3a28d447-691b-4ac3-ac0f-32b66c005300" Name="Interfaccia DP_1">
+              <Attribute Name="Label" AttributeDataType="xs:string">
+                <Value>X3</Value>
+              </Attribute>
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>33280</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>true</Value>
+              </Attribute>
+              <InternalElement ID="2d7d52ec-b3e4-4f86-b875-df6f76dce200" Name="P1">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Profibus</Value>
+                </Attribute>
+                <Attribute Name="NetworkAddress" AttributeDataType="xs:string">
+                  <Value>2</Value>
+                </Attribute>
+                <ExternalInterface ID="97f6094d-6785-4c34-98ca-57c38407b563" Name="LogicalEndPoint_Node" RefBaseClassPath="CommunicationInterfaceClassLib/LogicalEndPoint" />
+                <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/Node" />
+              </InternalElement>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/CommunicationInterface" />
+            </InternalElement>
+            <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+          </InternalElement>
+          <InternalElement ID="3947cec1-5116-4061-aaff-ec181395c396" Name="AI 8xU/I/RTD/TC ST_1">
+            <Attribute Name="TypeName" AttributeDataType="xs:string">
+              <Value>AI 8xU/I/RTD/TC ST</Value>
+            </Attribute>
+            <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+              <Value>2</Value>
+            </Attribute>
+            <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+              <Value>false</Value>
+            </Attribute>
+            <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+              <Value>OrderNumber:6ES7 531-7KF00-0AB0</Value>
+            </Attribute>
+            <Attribute Name="FirmwareVersion" AttributeDataType="xs:string">
+              <Value>V2.2</Value>
+            </Attribute>
+            <InternalElement ID="895f214e-27f8-4d77-b51b-aefa9aaae4d7" Name="AI 8xU/I/RTD/TC ST_1">
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>1</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>true</Value>
+              </Attribute>
+              <Attribute Name="Address">
+                <RefSemantic CorrespondingAttributePath="OrderedListType" />
+                <Attribute Name="1">
+                  <Attribute Name="StartAddress" AttributeDataType="xs:int">
+                    <Value>4</Value>
+                  </Attribute>
+                  <Attribute Name="Length" AttributeDataType="xs:int">
+                    <Value>128</Value>
+                  </Attribute>
+                  <Attribute Name="IoType" AttributeDataType="xs:string">
+                    <Value>Input</Value>
+                  </Attribute>
+                </Attribute>
+              </Attribute>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+          </InternalElement>
+          <InternalElement ID="597a0878-9d43-499c-89ec-30a87be5ff4a" Name="DI 32x24VDC HF_1">
+            <Attribute Name="TypeName" AttributeDataType="xs:string">
+              <Value>DI 32x24VDC HF</Value>
+            </Attribute>
+            <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+              <Value>3</Value>
+            </Attribute>
+            <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+              <Value>false</Value>
+            </Attribute>
+            <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+              <Value>OrderNumber:6ES7 521-1BL00-0AB0</Value>
+            </Attribute>
+            <Attribute Name="FirmwareVersion" AttributeDataType="xs:string">
+              <Value>V2.1</Value>
+            </Attribute>
+            <InternalElement ID="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c" Name="DI 32x24VDC HF_1">
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>1</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>true</Value>
+              </Attribute>
+              <Attribute Name="Address">
+                <RefSemantic CorrespondingAttributePath="OrderedListType" />
+                <Attribute Name="1">
+                  <Attribute Name="StartAddress" AttributeDataType="xs:int">
+                    <Value>0</Value>
+                  </Attribute>
+                  <Attribute Name="Length" AttributeDataType="xs:int">
+                    <Value>32</Value>
+                  </Attribute>
+                  <Attribute Name="IoType" AttributeDataType="xs:string">
+                    <Value>Input</Value>
+                  </Attribute>
+                </Attribute>
+              </Attribute>
+              <ExternalInterface ID="cc2ab458-9d42-4368-9db5-8c9f01e723c3" Name="Channel_DI_0" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>0</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="6f0262f2-d7ff-4f55-b852-75936794f8f9" Name="Channel_DI_1" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="a604220a-61f2-4dc2-b2ec-3801b57a2251" Name="Channel_DI_2" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>2</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="d3f9e773-29b0-4b1c-8489-e24c241dff19" Name="Channel_DI_3" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>3</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="38bfa934-3425-4e1f-a9fe-89669fb1c1bf" Name="Channel_DI_4" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>4</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="efc50f81-ebe9-4366-ab5f-779a147793ad" Name="Channel_DI_5" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>5</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="38569dd8-1840-4d03-b421-dd2b6eac7327" Name="Channel_DI_6" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>6</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="06dc5002-f88c-4ae2-bee7-145a8b7fad69" Name="Channel_DI_7" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>7</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="574738ab-cbc7-4b0d-9520-ca08f85f1474" Name="Channel_DI_8" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>8</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="811c464f-7aa2-4cde-922a-0695d816d49d" Name="Channel_DI_9" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>9</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="5c84cebc-1de1-41ff-9a93-a897ea0f23fd" Name="Channel_DI_10" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>10</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="6feaab03-7766-4c01-9362-ae3e19423e55" Name="Channel_DI_11" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>11</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="cb885ae7-1fa9-44b3-8b8f-2d388fb6dbdd" Name="Channel_DI_12" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>12</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="01b3336a-8980-4d42-8ef7-ecb71143258f" Name="Channel_DI_13" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>13</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="ab3a3e93-7718-4b2a-b52c-96bd3c9d0a80" Name="Channel_DI_14" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>14</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="cb3fa2a1-2880-4753-bc1e-41a851bb04fd" Name="Channel_DI_15" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>15</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="193c6b81-3951-41ce-ae09-d3f7bddea75f" Name="Channel_DI_16" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>16</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="f6681a42-9e7e-4a12-ace6-a8ad69eb47fd" Name="Channel_DI_17" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>17</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="9475cc17-aa02-41f3-96aa-e0b98908ac4d" Name="Channel_DI_18" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>18</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="b567f565-3bf6-46f2-8d19-c315c2309a30" Name="Channel_DI_19" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>19</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="379c7b69-86ed-4b9e-ba10-3be14a6d60ba" Name="Channel_DI_20" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>20</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="c55492c0-fbe6-4152-9c2f-7d947d892604" Name="Channel_DI_21" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>21</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="65ec0bb9-079a-4004-89c5-1de7e5ff3e35" Name="Channel_DI_22" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>22</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="4f54d600-2eb7-43f0-95fa-35e4ec05ee17" Name="Channel_DI_23" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>23</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="ec323380-9435-4473-bfdb-1b6f30ebdffb" Name="Channel_DI_24" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>24</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="3db31869-2198-4dfb-a172-fd0e9ed73090" Name="Channel_DI_25" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>25</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="5e230b6f-bbf3-4121-a9fc-41bdfed62a6a" Name="Channel_DI_26" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>26</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="0ca3003d-826e-467c-ac0c-22e5640c33c4" Name="Channel_DI_27" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>27</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="123a1013-9f2f-42e9-ac11-938331d26947" Name="Channel_DI_28" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>28</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="6019e775-037e-4bf4-9e4f-f8918c139dd1" Name="Channel_DI_29" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>29</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="1df43a35-da0f-40e2-8d7e-b5e003746903" Name="Channel_DI_30" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>30</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <ExternalInterface ID="c893521a-361e-4ffc-aae7-70385cb5a243" Name="Channel_DI_31" RefBaseClassPath="AutomationProjectConfigurationInterfaceClassLib/Channel">
+                <Attribute Name="Type" AttributeDataType="xs:string">
+                  <Value>Digital</Value>
+                </Attribute>
+                <Attribute Name="IoType" AttributeDataType="xs:string">
+                  <Value>Input</Value>
+                </Attribute>
+                <Attribute Name="Number" AttributeDataType="xs:int">
+                  <Value>31</Value>
+                </Attribute>
+                <Attribute Name="Length" AttributeDataType="xs:int">
+                  <Value>1</Value>
+                </Attribute>
+              </ExternalInterface>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+          </InternalElement>
+          <InternalElement ID="d763eec5-4bb0-4a85-9068-e05eab51943e" Name="AQ 4xU/I ST_1">
+            <Attribute Name="TypeName" AttributeDataType="xs:string">
+              <Value>AQ 4xU/I ST</Value>
+            </Attribute>
+            <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+              <Value>4</Value>
+            </Attribute>
+            <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+              <Value>false</Value>
+            </Attribute>
+            <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+              <Value>OrderNumber:6ES7 532-5HD00-0AB0</Value>
+            </Attribute>
+            <Attribute Name="FirmwareVersion" AttributeDataType="xs:string">
+              <Value>V2.2</Value>
+            </Attribute>
+            <InternalElement ID="8135d6cf-0b25-46eb-b327-1ba14677d7be" Name="AQ 4xU/I ST_1">
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>1</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>true</Value>
+              </Attribute>
+              <Attribute Name="Address">
+                <RefSemantic CorrespondingAttributePath="OrderedListType" />
+                <Attribute Name="1">
+                  <Attribute Name="StartAddress" AttributeDataType="xs:int">
+                    <Value>4</Value>
+                  </Attribute>
+                  <Attribute Name="Length" AttributeDataType="xs:int">
+                    <Value>64</Value>
+                  </Attribute>
+                  <Attribute Name="IoType" AttributeDataType="xs:string">
+                    <Value>Output</Value>
+                  </Attribute>
+                </Attribute>
+              </Attribute>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+          </InternalElement>
+          <InternalElement ID="4eeecc4c-c7a4-47ed-bed1-61ae200359a1" Name="DQ 32x24VDC/0.5A HF_1">
+            <Attribute Name="TypeName" AttributeDataType="xs:string">
+              <Value>DQ 32x24VDC/0.5A HF</Value>
+            </Attribute>
+            <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+              <Value>5</Value>
+            </Attribute>
+            <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+              <Value>false</Value>
+            </Attribute>
+            <Attribute Name="TypeIdentifier" AttributeDataType="xs:string">
+              <Value>OrderNumber:6ES7 522-1BL01-0AB0</Value>
+            </Attribute>
+            <Attribute Name="FirmwareVersion" AttributeDataType="xs:string">
+              <Value>V1.1</Value>
+            </Attribute>
+            <InternalElement ID="0a9d7130-5177-4e99-b669-ed86d7f70b3e" Name="DQ 32x24VDC/0.5A HF_1">
+              <Attribute Name="PositionNumber" AttributeDataType="xs:int">
+                <Value>1</Value>
+              </Attribute>
+              <Attribute Name="BuiltIn" AttributeDataType="xs:boolean">
+                <Value>true</Value>
+              </Attribute>
+              <Attribute Name="Address">
+                <RefSemantic CorrespondingAttributePath="OrderedListType" />
+                <Attribute Name="1">
+                  <Attribute Name="StartAddress" AttributeDataType="xs:int">
+                    <Value>0</Value>
+                  </Attribute>
+                  <Attribute Name="Length" AttributeDataType="xs:int">
+                    <Value>32</Value>
+                  </Attribute>
+                  <Attribute Name="IoType" AttributeDataType="xs:string">
+                    <Value>Output</Value>
+                  </Attribute>
+                </Attribute>
+              </Attribute>
+              <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+            </InternalElement>
+            <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+          </InternalElement>
+          <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/DeviceItem" />
+          <InternalLink Name="Link To Tag_23" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_0" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI0.0]" />
+          <InternalLink Name="Link To Tag_24" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_1" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI0.1]" />
+          <InternalLink Name="Link To Tag_25" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_2" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI0.2]" />
+          <InternalLink Name="Link To Tag_26" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_3" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI0.3]" />
+          <InternalLink Name="Link To Tag_27" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_4" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI0.4]" />
+          <InternalLink Name="Link To Tag_28" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_5" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI0.5]" />
+          <InternalLink Name="Link To Tag_29" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_6" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:PV1" />
+          <InternalLink Name="Link To Tag_30" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_7" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:PR1" />
+          <InternalLink Name="Link To Tag_31" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_8" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:PV2" />
+          <InternalLink Name="Link To Tag_32" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_9" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:PR2" />
+          <InternalLink Name="Link To Tag_33" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_10" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:JM1" />
+          <InternalLink Name="Link To Tag_34" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_11" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:JM2" />
+          <InternalLink Name="Link To Tag_35" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_12" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:JMA" />
+          <InternalLink Name="Link To Tag_36" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_13" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:JMI" />
+          <InternalLink Name="Link To Tag_37" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_14" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:ACK" />
+          <InternalLink Name="Link To Tag_38" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_15" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:EMERG" />
+          <InternalLink Name="Link To Tag_39" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_16" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI2.0]" />
+          <InternalLink Name="Link To Tag_40" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_17" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI2.1]" />
+          <InternalLink Name="Link To Tag_41" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_18" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:a_0" />
+          <InternalLink Name="Link To Tag_42" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_19" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:a_1" />
+          <InternalLink Name="Link To Tag_43" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_20" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:b_0" />
+          <InternalLink Name="Link To Tag_44" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_21" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:b_1" />
+          <InternalLink Name="Link To Tag_45" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_22" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI2.6]" />
+          <InternalLink Name="Link To Tag_46" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_23" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI2.7]" />
+          <InternalLink Name="Link To Tag_47" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_24" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI3.0]" />
+          <InternalLink Name="Link To Tag_48" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_25" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI3.1]" />
+          <InternalLink Name="Link To Tag_49" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_26" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI3.2]" />
+          <InternalLink Name="Link To Tag_50" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_27" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI3.3]" />
+          <InternalLink Name="Link To Tag_51" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_28" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI3.4]" />
+          <InternalLink Name="Link To Tag_52" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_29" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI3.5]" />
+          <InternalLink Name="Link To Tag_53" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_30" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI3.6]" />
+          <InternalLink Name="Link To Tag_54" RefPartnerSideA="3147b6e8-c98b-4b7f-9243-9dfd37ddc65c:Channel_DI_31" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI3.7]" />
+        </InternalElement>
+        <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/Device" />
+      </InternalElement>
+      <SupportedRoleClass RefRoleClassPath="AutomationProjectConfigurationRoleClassLib/AutomationProject" />
+      <InternalLink Name="Link To Subnet_1" RefPartnerSideA="b25ebd55-ade3-41e5-899d-92ce025e7b0f:LogicalEndPoint_Node" RefPartnerSideB="15940995-3bd3-4233-89ed-af098ca5a490:LogicalEndPoint_Subnet" />
+      <InternalLink Name="Link To Subnet_2" RefPartnerSideA="fd3ab1a8-334e-43b8-8c91-de01300ed148:LogicalEndPoint_Node" RefPartnerSideB="9b0a76f3-97a6-4f98-9cc5-abe9f0f8153b:LogicalEndPoint_Subnet" />
+      <InternalLink Name="Link To Subnet_3" RefPartnerSideA="2d7d52ec-b3e4-4f86-b875-df6f76dce200:LogicalEndPoint_Node" RefPartnerSideB="0916542c-ff6f-4693-9385-27a49ad951dd:LogicalEndPoint_Subnet" />
+      <InternalLink Name="Link To Subnet_4" RefPartnerSideA="2b74f0a3-f085-4814-845f-799f6f7b2e26:LogicalEndPoint_Node" RefPartnerSideB="15940995-3bd3-4233-89ed-af098ca5a490:LogicalEndPoint_Subnet" />
+      <InternalLink Name="Link To Port_1" RefPartnerSideA="fb9cbaf0-fc85-42d7-9420-8a4916673ce4:CommunicationPortInterface" RefPartnerSideB="c33cc948-4113-4d65-bc87-74de0d820ae0:CommunicationPortInterface" />
+      <InternalLink Name="Link To Tag_1" RefPartnerSideA="08f7ed1e-5a16-41f7-9f81-6aac53b238f6:Channel_AI_0" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:AI8" />
+      <InternalLink Name="Link To Tag_2" RefPartnerSideA="08f7ed1e-5a16-41f7-9f81-6aac53b238f6:Channel_AI_1" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:AI9" />
+      <InternalLink Name="Link To Tag_3" RefPartnerSideA="e9bc4341-8945-4c76-ad86-f326b0751d08:Channel_AO_0" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:AO4" />
+      <InternalLink Name="Link To Tag_4" RefPartnerSideA="e9bc4341-8945-4c76-ad86-f326b0751d08:Channel_AO_1" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:AO5" />
+      <InternalLink Name="Link To Tag_5" RefPartnerSideA="462cc3bc-876d-451c-8fa1-42384eff02ea:Channel_DI_0" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:FC1" />
+      <InternalLink Name="Link To Tag_6" RefPartnerSideA="462cc3bc-876d-451c-8fa1-42384eff02ea:Channel_DI_1" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI21.1]" />
+      <InternalLink Name="Link To Tag_7" RefPartnerSideA="e56af542-0b40-4db1-965a-00b4a45f78be:Channel_DI_0" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI20.0]" />
+      <InternalLink Name="Link To Tag_8" RefPartnerSideA="e56af542-0b40-4db1-965a-00b4a45f78be:Channel_DI_1" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI20.1]" />
+      <InternalLink Name="Link To Tag_9" RefPartnerSideA="e56af542-0b40-4db1-965a-00b4a45f78be:Channel_DI_2" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI20.2]" />
+      <InternalLink Name="Link To Tag_10" RefPartnerSideA="e56af542-0b40-4db1-965a-00b4a45f78be:Channel_DI_3" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI20.3]" />
+      <InternalLink Name="Link To Tag_11" RefPartnerSideA="e56af542-0b40-4db1-965a-00b4a45f78be:Channel_DI_4" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI20.4]" />
+      <InternalLink Name="Link To Tag_12" RefPartnerSideA="e56af542-0b40-4db1-965a-00b4a45f78be:Channel_DI_5" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI20.5]" />
+      <InternalLink Name="Link To Tag_13" RefPartnerSideA="e56af542-0b40-4db1-965a-00b4a45f78be:Channel_DI_6" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI20.6]" />
+      <InternalLink Name="Link To Tag_14" RefPartnerSideA="e56af542-0b40-4db1-965a-00b4a45f78be:Channel_DI_7" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DI20.7]" />
+      <InternalLink Name="Link To Tag_15" RefPartnerSideA="65fc1d40-aa90-4f1b-9fa0-bea7d7f03a55:Channel_DO_0" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:YA+" />
+      <InternalLink Name="Link To Tag_16" RefPartnerSideA="65fc1d40-aa90-4f1b-9fa0-bea7d7f03a55:Channel_DO_1" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:YA-" />
+      <InternalLink Name="Link To Tag_17" RefPartnerSideA="72ade310-ec21-4cc1-8d2f-63b5e600129b:Channel_DO_0" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:YB+" />
+      <InternalLink Name="Link To Tag_18" RefPartnerSideA="72ade310-ec21-4cc1-8d2f-63b5e600129b:Channel_DO_1" RefPartnerSideB="cf22b53d-7dea-4159-9bc9-28129def9808:YB-" />
+      <InternalLink Name="Link To Tag_19" RefPartnerSideA="094249b2-f654-4435-981e-9605e366ab95:Channel_DO_0" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DO14.0]" />
+      <InternalLink Name="Link To Tag_20" RefPartnerSideA="094249b2-f654-4435-981e-9605e366ab95:Channel_DO_1" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DO14.1]" />
+      <InternalLink Name="Link To Tag_21" RefPartnerSideA="b8ce61dd-7c60-43d9-8b6d-e245cd52a10d:Channel_DO_0" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DO15.0]" />
+      <InternalLink Name="Link To Tag_22" RefPartnerSideA="b8ce61dd-7c60-43d9-8b6d-e245cd52a10d:Channel_DO_1" RefPartnerSideB="[cf22b53d-7dea-4159-9bc9-28129def9808]:[DO15.1]" />
+      <InternalLink Name="Link To IoSystem_1" RefPartnerSideA="6d64b259-2c4e-443f-ac49-e20ba5d18ddf:LogicalEndPoint_Interface" RefPartnerSideB="a8477eac-279e-4fce-9059-85ab52c0ea19:LogicalEndPoint_IoSystem" />
+    </InternalElement>
+  </InstanceHierarchy>
+</CAEXFile>

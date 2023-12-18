@@ -1,0 +1,34 @@
+Appunti veloci veloci
+
+
+Per il PLC:
+
+-creare un function block per gestire gli stati
+-creare delle function che operano negli stati
+
+-Stati:
+  -Stato stop: il robot va in una certa posizione fermo. Non deve interferire con la telecamera
+  -Stato partita: si divide in due stati: attendi mossa o gioca mossa
+
+  -Stato attendi mossa simile allo stop
+  -Stato gioca mossa più complicato:
+        -in caso si debba prendere solamente la pedina e spostarla: vai alle coordinate pedina e spostala a coordinate taget e schiaccia il bottone mossa
+        -in caso si debba catturare una pedina: prendi pedina da catturare mettila a lato (o sul nastro) , vai alle coordinate pedina e spostala a coordinate taget e schiaccia il bottone mossa
+
+
+
+Abbiamo delle variabili input che prendiamo dal codice python:
+  - x-y scacchiera posizione pedina
+  - x-y scacchiera posizione target
+  - turno di gioco
+  - Stato partita (In corso- o ferma)
+  -tipo  di pedina da spostare
+
+
+A x-y della scacchiera corrispondono una x-y-z reali da mappare. Quindi avremo un array di 8X8 con ognuno dei 64 con variabili x-y-z. Soluzione alternativa pensare a un blocco dati strutturato oppure a un enumerazione. Preferibile la prima.
+
+
+Possiamo pensare a 3 array: uno per x, uno per y e uno per z.
+
+Contando la prima casella come (1,1), allora il numero di casella indivduato da x e y della scacchiera sarà C=8y-8+1+x+1=8y+x+-6.
+
