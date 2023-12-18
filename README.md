@@ -3,9 +3,10 @@
 
 ---
 
-Human vs AI (Stockfish engine)
+Universal Robots arm vs human
 
-Camera captures the image of chessboard then the images analyzed using imageprocessing to identify the moves made by opponent and stockfish engine calculates the best possible move.
+The camera captures an image of the chess board, which gets analyzed through openCV to identify the moves made by the opponent: 
+The best possible move gets calculated by stockfish and is executed by the arm.
 
 <img src="https://raw.githubusercontent.com/Vatsalparsaniya/Realtime-OpenCV-Chess/master/Images/Open-cv.png" width="48"> ![opencv](https://img.shields.io/badge/CV-Open--CV-green)|<img src="https://raw.githubusercontent.com/Vatsalparsaniya/Realtime-OpenCV-Chess/master/Images/Python3.jpg" width="55">![python](https://img.shields.io/badge/Py-Python3-blue)
 :-------------------------:|:-------------------------:
