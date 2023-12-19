@@ -76,24 +76,17 @@ map_position =np.load(dir_path+"/map_position.npz")   # map move values for (0,0
 
 
 def fen2board(fen_line):
-    chess_board = [] 
-    current_player_bool_position = []
-    for row in fen_line.split(' ')[0].split('/'):
-        bool_row = []
-        chess_row = []
-        for cell in list(row):
-            if cell.isnumeric():
-                for i in range(int(cell)):
-                    chess_row.append(str(1))
-                    bool_row.append(0)
-            else:
-                chess_row.append(cell)
-                bool_row.append(1)
-        chess_board.append(chess_row)
-        current_player_bool_position.append(bool_row)
-    chess_board = np.array(chess_board)
-    current_player_bool_position = np.array(current_player_bool_position)
-    return chess_board,current_player_bool_position
+    # Convert a FEN string to a list of board rows
+    rows = fen_line.split(' ')[0].split('/')
+
+    # Convert each FEN row to a board row
+    chess_board = [list(cell) if cell.isalpha() else ['1'] * int(cell) for row in rows for cell in row]
+
+    # Flatten the lists to ensure consistent lengths
+    flattened_chess_board = [cell for sublist in chess_board for cell in sublist]
+    current_player_bool_position = [1 if cell != '1' else 0 for sublist in chess_board for cell in sublist]
+
+    return np.array(flattened_chess_board).reshape(8, 8), np.array(current_player_bool_position).reshape(8, 8)
 
  
 def board2fen(chess_board):
@@ -541,10 +534,8 @@ while 1:
                 break
         try:
             ret , img_2 = cv2.VideoCapture(camera_ip).read()
-            print(1)
             img_2 =   cv2.resize(img_2,(800,800))
             img_2 = get_warp_img(img_2,dir_path,img_resize)
-            print(2)
         except:
             print("Connection to camera failed, retying...")
             while True:
@@ -553,11 +544,36 @@ while 1:
                     img_2 =   cv2.resize(img_2,(800,800))
                     img_2 = get_warp_img(img_2,dir_path,img_resize)
                     break
-        move_word,game_img,flag = find_current_past_position(img_1,img_2,boxes,bool_position,board.fen(),chess_board,number_to_position_map,map_position)
-        print(3)
+        #cv2.imshow('image1',img_1)
+        #cv2.imshow('image2',img_2)
+        print(bool_position,board.fen(),chess_board,number_to_position_map,map_position)
+        try:
+            move_word,game_img,flag, castling_type = find_current_past_position(img_1,img_2,boxes,bool_position,board.fen(),chess_board,number_to_position_map,map_position)
+        except:
+            # no new move has been detected
+            print('no new move has been detected')
+            set_legal_positions(img_2,board,boxes)
+        
         if flag:
+            
+            #if castling_type != None:
+            #    #change board for castle
+            #    print("castle type", castling_type)
+            #    if castling_type == 'Q':
+            #        move = chess.Move.from_uci("e8c8")
+            #        move_word = 'e8c8'  #e1g1 for white
+            #    elif castling_type == 'K':
+            #        move = chess.Move.from_uci("e8c8")
+            #        move_word = 'e8g8'  #e1c1 for white
+            #else:
+            #    move = chess.Move.from_uci(str(move_word))
+            #    print("move is:", move)
+            
+            #if move_word == ''
             move = chess.Move.from_uci(str(move_word))
-            if move in board.legal_moves:
+            print(move)
+            print(board)
+            if move in board.legal_moves:      
                 board.push(move)
                 last_move = str(move_word)
                 show_game(game_img,board,last_move)
@@ -566,6 +582,15 @@ while 1:
                 np.savez(dir_path+"/fen_line_board.npz",chess_board=chess_board,player_bool_position=player_bool_position,white_turn=1,last_move=last_move)
             else:
                 # not a legal move
+                print('Not a legal move')
+                #reset to make castling work (unsure why)
+                chess_board = np.load(dir_path+'/fen_line_board.npz')['chess_board']
+                player_bool_position = np.load(dir_path+'/fen_line_board.npz')['player_bool_position']
+                white_turn = np.load(dir_path+'/fen_line_board.npz')['white_turn']
+                last_move = np.load(dir_path+'/fen_line_board.npz')['last_move']
+                fen_line = board2fen(chess_board)
+                board = chess.Board(fen=fen_line)
+                board.turn = False
                 set_legal_positions(img_2,board,boxes)
         else:
             show_game(game_img,board,last_move)
