@@ -20,8 +20,9 @@ bool valueButton5;
 bool valueButton6;
 bool valueButton7;
 
+typedef enum {Stop, Tempo_Bianco, Tempo_Nero, Mossa_Bianco, Mossa_Nero} Stato;
 
-
+Stato stati;
 
 
 void setup() {
@@ -61,7 +62,30 @@ void pulsanti() {
 void loop() {
   pulsanti();
 
-  
+  switch(stati) {
+
+
+    case Stop:
+
+  break;
+
+    case Tempo_Bianco:
+
+    break;
+
+    case Tempo_Nero:
+
+    break;
+
+    case Mossa_Bianco:
+
+    break;
+
+
+    case Mossa_Nero:
+
+    break; 
+  }
   stampaPronti();
 }
 
