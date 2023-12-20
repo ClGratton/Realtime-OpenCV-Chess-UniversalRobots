@@ -55,7 +55,7 @@ def find_current_past_position(img_1,img_2,boxes,bool_position,FEN_line,chess_bo
 
         
         temp_matrix = past_black_bool_position - diff_position
-        print('TEMP MATRIX:',temp_matrix)
+        #print('TEMP MATRIX:',temp_matrix)
         #[[ 1 -1  1  1  1  1  1  1]
         #[ 1  1  1  1  1  1  1  1]
         #[-2  0  0  0  0  0  0  0]
@@ -64,22 +64,19 @@ def find_current_past_position(img_1,img_2,boxes,bool_position,FEN_line,chess_bo
         #[ 0  0  0  0  0  0  0  0]
         #[ 0  0  0  0  0  0  0  0]
         #[ 0  0  0  0  0  0  0  0]]
-
-
-        castling_type = None
         
         position_of_past_black = np.where(temp_matrix == -1)
         position_of_new_black = np.where(temp_matrix == -2)
         
-        print('position:', position_of_past_black,position_of_new_black)
+        #print('position:', position_of_past_black,position_of_new_black)
         #(array([0], dtype=int64), array([1], dtype=int64)) (array([2], dtype=int64), array([0], dtype=int64))
         
         player_moved = chess_board[position_of_past_black[0][0]][position_of_past_black[1][0]] 
 
-        print('player_moved:', player_moved)
+        #print('player_moved:', player_moved)
         #n
         
-        print('chess_board:', chess_board)
+        #print('chess_board:', chess_board)
         #[['r' 'n' 'b' 'q' 'k' 'b' 'n' 'r']
             #['p' 'p' 'p' 'p' 'p' 'p' 'p' 'p']
             #['1' '1' '1' '1' '1' '1' '1' '1']
@@ -92,7 +89,7 @@ def find_current_past_position(img_1,img_2,boxes,bool_position,FEN_line,chess_bo
         chess_board[position_of_past_black]=1
         chess_board[position_of_new_black]=player_moved
 
-        print('chess_board:', chess_board)
+        #print('chess_board:', chess_board)
         #[['r' '1' 'b' 'q' 'k' 'b' 'n' 'r']
             #['p' 'p' 'p' 'p' 'p' 'p' 'p' 'p']
             #['n' '1' '1' '1' '1' '1' '1' '1']
@@ -104,12 +101,12 @@ def find_current_past_position(img_1,img_2,boxes,bool_position,FEN_line,chess_bo
 
         move_word = number_to_position_map[int(position_of_past_black[0][0])][int(position_of_past_black[1][0])]
         
-        print('move_word:', move_word)
+        #print('move_word:', move_word)
         #b8
         
         move_word += number_to_position_map[int(position_of_new_black[0][0])][int(position_of_new_black[1][0])]
 
-        print('move_word:', move_word)
+        #print('move_word:', move_word)
         #b8a6
 
         position1 = str(move_word)[0:2]
@@ -124,11 +121,11 @@ def find_current_past_position(img_1,img_2,boxes,bool_position,FEN_line,chess_bo
         draw_img = img_2.copy()
         cv2.rectangle(draw_img,(position1_box[0],position1_box[1]),(position1_box[2],position1_box[3]),(0,0,255),3)
         cv2.rectangle(draw_img,(position2_box[0],position2_box[1]),(position2_box[2],position2_box[3]),(0,255,0),3)
-        print(move_word)
-        print(draw_img)
-        print(castling_type)
-        return move_word,draw_img,1, castling_type
-        print('exiting')
+        #print(move_word)
+        #print(draw_img)
+        #print(castling_type)
+        return move_word,draw_img,1
+        #print('exiting')
     else:
         return " ",img_2,0
 

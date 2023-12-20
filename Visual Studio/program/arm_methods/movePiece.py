@@ -1,6 +1,6 @@
 import time
 from urx import Robot
-from program.config import travel_offset, home_position
+from config import travel_offset, home_position
 
 def movePiece(robot, initial_position, target_position):
 
