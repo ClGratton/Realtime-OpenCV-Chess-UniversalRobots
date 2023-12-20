@@ -6,11 +6,11 @@
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-int buttons[] = {2, 3, 8, 5, 6, 7}; // Create an array of button pin numbers
+int buttons[] = {2, 3, 3, 5, 6, 7}; // Create an array of button pin numbers
 bool buttonValues[] = {false, false, false, false, false, false}; // Create an array for button states
 
 typedef enum {
-  stop,
+  stopt,
   white_time,
   black_time,
   white_move,
@@ -20,6 +20,17 @@ typedef enum {
 
 State states;
 
+typedef struct {
+   int hours;
+   int minutes;
+   int seconds;
+} Time;
+
+Time time_white = {00, 00, 00};
+Time time_black = {00, 00, 00};
+unsigned long previousMillis = 0;
+unsigned int interval = 1000; // Interval for time updates in milliseconds
+
 
 void printToScreen() {
   display.clearDisplay();
@@ -28,7 +39,7 @@ void printToScreen() {
   display.setCursor(3, 3);
   display.println("Black");
   display.setTextSize(3);
-  display.setCursor(0, (SCREEN_HEIGHT / 2) -8);
+  display.setCursor(0, (SCREEN_HEIGHT / 2) - 8);
   display.println("Ready?");
   display.display();
 }
@@ -51,38 +62,55 @@ void setup() {
 
   if (!display.begin( SSD1306_SWITCHCAPVCC, 0x3C)) {
     while (true);
-    
-  }
-    display.clearDisplay();
-    display.display();
 
-  
+  }
+  display.clearDisplay();
+  display.display();
+
+  states = stopt;
 }
 
 void loop() {
+
+
   updateButtons();
 
-  switch(states) {
-    case stop:
+  switch (states) {
+    case stopt:
 
-    break;
+      if (buttonValues[5] == LOW)  {
+        states = white_time;
+      }
+
+      break;
+
 
     case white_time:
+      display.clearDisplay();
+      display.setTextColor( WHITE);
+      display.setTextSize(3);
+      display.setCursor(0, (SCREEN_HEIGHT / 2) - 8);
+      display.print(String(time_white.hours) + ":" + String(time_white.minutes) + ":" + String(time_white.seconds));
+      display.display();
 
-    break;
+      
+
+   
+ 
+
+      break;
 
     case black_time:
 
-    break;
+        break;
 
-    case white_move:
+      case white_move:
 
-    break;
+          break;
 
-    case black_move:
+        case black_move:
 
-    break; 
-  }
-  printToScreen();
+            break;
+          }
+
 }
-
