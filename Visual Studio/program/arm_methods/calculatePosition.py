@@ -1,6 +1,6 @@
 import time
 from urx import Robot
-from program.config import checkboard_coord_start, checkboard_coord_end, rook_height, knight_height, bishop_height, queen_height, king_height, travel_offset
+from config import checkboard_coord_start, checkboard_coord_end, rook_height, knight_height, bishop_height, queen_height, king_height, travel_offset
 
 check_lenght = abs(checkboard_coord_start[0]-checkboard_coord_end[0])/7    #since coord start and end where the piece lies, the center of the check, the lenght between them is effectively deminished by 2 half checks, so one check less which means deviding by 7 instead of 8
 check_height = abs(checkboard_coord_start[1]-checkboard_coord_end[1])/7

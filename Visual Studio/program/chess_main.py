@@ -14,12 +14,12 @@ cap = cv2.VideoCapture(usb_camera_index)
 ###################################################################################
 ## Import files
 ###################################################################################
-from program.image_methods.detect_points import get_points
-from program.image_methods.read_warp_img import get_warp_img
-from program.image_methods.find_position_black import find_current_past_position
-from program.arm_methods.calculatePosition import calculatePosition
-from program.arm_methods.movePiece import movePiece
-from program.config import camera_ip, robot_ip, robotExists, debug, time_limit
+from image_methods.detect_points import get_points
+from image_methods.read_warp_img import get_warp_img
+from image_methods.find_position_black import find_current_past_position
+from arm_methods.calculatePosition import calculatePosition
+from arm_methods.movePiece import movePiece
+from config import camera_ip, robot_ip, robotExists, debug, time_limit
 ###################################################################################
 ## User defined variables
 ###################################################################################
@@ -38,7 +38,7 @@ check_height = 0
 # device = cv2.VideoCapture(1) # set devidce for read image (1: for tacking input from usb-webcam)
 img_resize = (800,800) # set o/p image size
 image = []
-engine = chess.engine.SimpleEngine.popen_uci("C:\stockfish_16\stockfish-windows-x86-64-avx2.exe") # stockfish engine
+engine = chess.engine.SimpleEngine.popen_uci("C:\stockfish\stockfish-windows-x86-64-avx2.exe") # stockfish engine
 chess_board = []   # it will store chess board matrix
 player_bool_position =[]
 bool_position = np.zeros((8,8),dtype=int)

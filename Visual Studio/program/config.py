@@ -1,4 +1,4 @@
-camera_ip = 'http://192.168.1.43:8080/video'    #ip of camera 
+camera_ip = 'http://192.168.20.39:8080/video'    #ip of camera 
 robot_ip = "192.168.1.100"                      #ip of robot arm
 
 robotExists = 0                                 #define whether the arm is connected or not to prevent crashes (0 for debug without arm)
