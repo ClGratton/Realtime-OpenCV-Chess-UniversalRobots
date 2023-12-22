@@ -19,8 +19,8 @@ from image_methods.read_warp_img import get_warp_img
 from image_methods.find_position_black import find_current_past_position
 from arm_methods.calculatePosition import calculatePosition
 from arm_methods.movePiece import movePiece
-from config import camera_ip, robot_ip, robotExists, debug, time_limit, highest_piece, eaten_position
-from arm_methods.getPieceHeight import getPieceHeight
+from config import camera_ip, robot_ip, robotExists, debug, time_limit, highest_piece, eaten_position, checkboard_coord_start, checkboard_coord_end
+from program.arm_methods.getPieceOffset import getPieceHeight
 ###################################################################################
 ## User defined variables
 ###################################################################################
@@ -463,7 +463,35 @@ while True:
 if robotExists:
     # Connect to the robot
     robot = Robot(robot_ip)
+    count=0
+    
+    #check if the upper left coordinate in config.py is null. If it is, setup is initiated
+    for x in checkboard_coord_start:
+        if x == 0:
+            count += 1
+    
+    if count == len(checkboard_coord_start):
+        print("Move the arm to the upper left corner while grabbing the highest piece, then press q")
+        while True:
+            if cv2.waitKey(1) == ord('q'):
+                break
+        main_checkboard_coord_start = robot.getl()
+    else:
+        main_checkboard_coord_start = checkboard_coord_start
 
+    #check if the bottom left coordinate in config.py is null. If it is, setup is initiated
+    for x in checkboard_coord_end:
+        if x == 0:
+            count += 1
+    
+    if count == len(checkboard_coord_end):
+        print("Move the arm to the bottom left corner while grabbing the highest piece, then press q")
+        while True:
+            if cv2.waitKey(1) == ord('q'):
+                break
+        main_checkboard_coord_end = robot.getl()
+    else:
+        main_checkboard_coord_end = checkboard_coord_end
 ###################################################################################
 ## Start Game
 ###################################################################################
@@ -520,12 +548,12 @@ while 1:
                 # movePiece(robot, initial_position, target_position)
             
         print("piece:",piece, "box_1_coordinate:",box_1_coordinate, "box_2_coordinate:",box_2_coordinate)
-        initial_position, target_position = calculatePosition(piece, box_1_coordinate, box_2_coordinate)
+        initial_position, target_position = calculatePosition(piece, main_checkboard_coord_start, main_checkboard_coord_end, box_1_coordinate, box_2_coordinate)
         print("initial_position:",initial_position, "target_position:",target_position)
         
         if robotExists:
             print('Arm is connected, moving selected piece...')
-            # movePiece(robot, initial_position, target_position)
+            movePiece(robot, initial_position, target_position)
         
         print("Press 'w' when you moved")
         while True:
