@@ -21,9 +21,9 @@ typedef enum {
 State states;
 
 typedef struct {
-   int hours;
-   int minutes;
-   int seconds;
+  int hours;
+  int minutes;
+  int seconds;
 } Time;
 
 Time time_white = {00, 00, 00};
@@ -74,11 +74,12 @@ void loop() {
 
 
   updateButtons();
+  Serial.println(buttonValues[0]);
 
   switch (states) {
     case stopt:
 
-      if (buttonValues[5] == LOW)  {
+      if (buttonValues[3] == LOW)  {
         states = white_time;
       }
 
@@ -86,31 +87,116 @@ void loop() {
 
 
     case white_time:
+
+    if (buttonValues[0] == LOW)  {
+        time_white.seconds =  time_white.seconds - 30;
+
+        if (time_white.hours = 0) {
+            time_white.seconds = 0;
+            time_white.minutes = 0;
+            time_white.hours = 0;
+          }
+          
+        if (time_white.seconds < 0) {
+          time_white.seconds = 30;
+          time_white.minutes--;
+        }
+
+        // If minutes are also zero, decrement hours
+        if (time_white.minutes < 0 ) {
+          time_white.seconds = 30;
+          time_white.minutes = 59;
+          time_white.hours--;
+        }
+      }
+
+      if (buttonValues[1] == LOW)  {
+        time_white.seconds =  time_white.seconds + 30;
+        if (time_white.seconds >  59) {
+          time_white.seconds = 0;
+          time_white.minutes++;
+        }
+
+        // If minutes are also zero, decrement hours
+        if (time_white.minutes > 59 ) {
+          time_white.seconds = 0;
+          time_white.minutes = 0;
+          time_white.hours++;
+
+
+        }
+      }
+
       display.clearDisplay();
       display.setTextColor( WHITE);
-      display.setTextSize(3);
-      display.setCursor(0, (SCREEN_HEIGHT / 2) - 8);
-      display.print(String(time_white.hours) + ":" + String(time_white.minutes) + ":" + String(time_white.seconds));
+      display.setTextSize(2);
+      //display.print(String(time_white.hours) + ":" + String(time_white.minutes) + ":" + String(time_white.seconds))
+      if (time_white.hours < 10) {
+        display.setCursor(0, (SCREEN_HEIGHT / 2) - 8);
+        display.print('0');
+        display.print(time_white.hours);
+        display.print(':');
+      } else {
+        display.print(time_white.hours);
+        display.print(':');
+      }
+
+      if (time_white.minutes < 10) {
+        display.setCursor(35, (SCREEN_HEIGHT / 2) - 8);
+        display.print('0');
+        display.print(time_white.minutes);
+        display.print(':');
+      } else {
+        display.print(time_white.minutes);
+        display.print(':');
+      }
+
+      if (time_white.seconds < 10) {
+        display.setCursor(70, (SCREEN_HEIGHT / 2) - 8);
+        display.print('0');
+        display.print(time_white.seconds);
+      } else {
+        display.print(time_white.seconds);
+      };
       display.display();
 
       
-
-   
- 
+      delay(100);
 
       break;
 
     case black_time:
 
-        break;
+      break;
 
-      case white_move:
+    case white_move:
 
-          break;
-
-        case black_move:
-
-            break;
+      if (time_white.seconds > 0) {
+        time_white.seconds--;
+      } else {
+        // If seconds are zero, decrement minutes
+        if (time_white.minutes > 0) {
+          time_white.seconds = 59;
+          time_white.minutes--;
+        } else {
+          // If minutes are also zero, decrement hours
+          if (time_white.hours > 0) {
+            time_white.seconds = 59;
+            time_white.minutes = 59;
+            time_white.hours--;
+          } else {
+            // If hours are zero, stopwatch has reached zero
+            Serial.println("Stopwatch has reached zero");
+            while (true);
           }
+        }
+      }
+
+      break;
+
+    case black_move:
+
+      break;
+  }
 
 }
