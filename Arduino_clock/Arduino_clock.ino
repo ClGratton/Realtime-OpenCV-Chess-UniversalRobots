@@ -12,6 +12,7 @@ bool buttonValues[] = {false, false, false, false, false, false}; // Create an a
 typedef enum {
   stopt,
   white_time,
+  white_increment,
   black_time,
   white_move,
   black_move,
@@ -26,8 +27,16 @@ typedef struct {
   int seconds;
 } Time;
 
+typedef struct {
+  int minutes;
+  int seconds;
+} Increment;
+
+
 Time time_white = {00, 00, 00};
+Increment increment_white = {00, 00};
 Time time_black = {00, 00, 00};
+Increment increment_black = {00, 00};
 unsigned long previousMillis = 0;
 unsigned int interval = 1000; // Interval for time updates in milliseconds
 
@@ -72,11 +81,11 @@ void setup() {
 
 void loop() {
 
-
   updateButtons();
   Serial.println(buttonValues[0]);
 
   switch (states) {
+    
     case stopt:
 
       if (buttonValues[3] == LOW)  {
@@ -88,25 +97,20 @@ void loop() {
 
     case white_time:
 
-    if (buttonValues[0] == LOW)  {
-        time_white.seconds =  time_white.seconds - 30;
+      if (buttonValues[0] == LOW)  {
+        if (!(time_white.seconds == 0 && time_white.minutes == 0 && time_white.hours == 0)) {
+          time_white.seconds =  time_white.seconds - 30;
 
-        if (time_white.hours = 0) {
-            time_white.seconds = 0;
-            time_white.minutes = 0;
-            time_white.hours = 0;
+          if ((time_white.seconds < 0)) {
+            time_white.seconds = 30;
+            time_white.minutes--;
           }
-          
-        if (time_white.seconds < 0) {
-          time_white.seconds = 30;
-          time_white.minutes--;
-        }
 
-        // If minutes are also zero, decrement hours
-        if (time_white.minutes < 0 ) {
-          time_white.seconds = 30;
-          time_white.minutes = 59;
-          time_white.hours--;
+          if (time_white.minutes < 0 && time_white.hours != 0) {
+            time_white.seconds = 30;
+            time_white.minutes = 59;
+            time_white.hours--;
+          }
         }
       }
 
@@ -122,10 +126,9 @@ void loop() {
           time_white.seconds = 0;
           time_white.minutes = 0;
           time_white.hours++;
-
-
         }
       }
+
 
       display.clearDisplay();
       display.setTextColor( WHITE);
@@ -160,8 +163,16 @@ void loop() {
       };
       display.display();
 
-      
+
+      if (buttonValues[3] == LOW)  {
+        states = white_increment;
+      }
+
       delay(100);
+
+      break;
+
+    case white_increment:
 
       break;
 
