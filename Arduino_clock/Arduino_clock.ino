@@ -85,7 +85,7 @@ void loop() {
   Serial.println(buttonValues[0]);
 
   switch (states) {
-    
+
     case stopt:
 
       if (buttonValues[3] == LOW)  {
@@ -168,11 +168,71 @@ void loop() {
         states = white_increment;
       }
 
-      delay(100);
+      delay(180);
 
       break;
 
     case white_increment:
+      if (buttonValues[0] == LOW)  {
+        if (!(increment_white.seconds == 0 && increment_white.minutes == 0)) {
+          increment_white.seconds =  increment_white.seconds - 30;
+
+          if ((increment_white.seconds < 0)) {
+            increment_white.seconds = 30;
+            increment_white.minutes--;
+          }
+
+          if (increment_white.minutes < 0 ) {
+            increment_white.seconds = 30;
+            increment_white.minutes = 59;
+          }
+        }
+      }
+
+      if (buttonValues[1] == LOW)  {
+        increment_white.seconds =  increment_white.seconds + 30;
+        if (increment_white.seconds >  59) {
+          increment_white.seconds = 0;
+          increment_white.minutes++;
+        }
+
+        // If minutes are also zero, decrement hours
+        if (increment_white.minutes > 59 ) {
+          increment_white.seconds = 0;
+          increment_white.minutes = 0;
+        }
+      }
+
+      display.clearDisplay();
+      display.setTextColor( WHITE);
+      display.setTextSize(2);
+      //display.print(String(time_white.hours) + ":" + String(time_white.minutes) + ":" + String(time_white.seconds))
+
+      if (increment_white.minutes < 10) {
+        display.setCursor(35, (SCREEN_HEIGHT / 2) - 8);
+        display.print('0');
+        display.print(increment_white.minutes);
+        display.print(':');
+      } else {
+        display.print(increment_white.minutes);
+        display.print(':');
+      }
+
+      if (increment_white.seconds < 10) {
+        display.setCursor(70, (SCREEN_HEIGHT / 2) - 8);
+        display.print('0');
+        display.print(increment_white.seconds);
+      } else {
+        display.print(increment_white.seconds);
+      };
+      display.display();
+
+
+      if (buttonValues[3] == LOW)  {
+        states = black_time;
+      }
+
+      delay(180);
 
       break;
 
