@@ -40,6 +40,8 @@ Increment increment_black = {00, 00};
 unsigned long previousMillis = 0;
 unsigned int interval = 1000; // Interval for time updates in milliseconds
 
+bool PassState;
+
 
 void printToScreen() {
   display.clearDisplay();
@@ -82,18 +84,24 @@ void setup() {
 void loop() {
 
   updateButtons();
-  Serial.println(buttonValues[0]);
+  Serial.println(states);
 
   switch (states) {
 
     case stopt:
 
       if (buttonValues[3] == LOW)  {
+            PassState = HIGH;
+      }
+
+      if(PassState && buttonValues[3] == HIGH) {
+        PassState = LOW;
         states = white_time;
       }
 
-      break;
-
+      
+        break;    
+      
 
     case white_time:
 
@@ -133,9 +141,11 @@ void loop() {
       display.clearDisplay();
       display.setTextColor( WHITE);
       display.setTextSize(2);
+      display.setCursor(2, 0);
+      display.print("Time:");
       //display.print(String(time_white.hours) + ":" + String(time_white.minutes) + ":" + String(time_white.seconds))
       if (time_white.hours < 10) {
-        display.setCursor(0, (SCREEN_HEIGHT / 2) - 8);
+        display.setCursor(2, (SCREEN_HEIGHT / 2) );
         display.print('0');
         display.print(time_white.hours);
         display.print(':');
@@ -145,7 +155,7 @@ void loop() {
       }
 
       if (time_white.minutes < 10) {
-        display.setCursor(35, (SCREEN_HEIGHT / 2) - 8);
+        display.setCursor(37, (SCREEN_HEIGHT / 2) );
         display.print('0');
         display.print(time_white.minutes);
         display.print(':');
@@ -155,7 +165,7 @@ void loop() {
       }
 
       if (time_white.seconds < 10) {
-        display.setCursor(70, (SCREEN_HEIGHT / 2) - 8);
+        display.setCursor(72, (SCREEN_HEIGHT / 2) );
         display.print('0');
         display.print(time_white.seconds);
       } else {
@@ -163,34 +173,38 @@ void loop() {
       };
       display.display();
 
-
       if (buttonValues[3] == LOW)  {
+            PassState = HIGH;
+      }
+
+      if(PassState && buttonValues[3] == HIGH) {
+        PassState = LOW;
         states = white_increment;
       }
 
-      delay(180);
+      delay(120);
 
       break;
 
     case white_increment:
       if (buttonValues[0] == LOW)  {
         if (!(increment_white.seconds == 0 && increment_white.minutes == 0)) {
-          increment_white.seconds =  increment_white.seconds - 30;
+          increment_white.seconds =  increment_white.seconds - 1;
 
           if ((increment_white.seconds < 0)) {
-            increment_white.seconds = 30;
+            increment_white.seconds = 59;
             increment_white.minutes--;
           }
 
           if (increment_white.minutes < 0 ) {
-            increment_white.seconds = 30;
+            increment_white.seconds = 59;
             increment_white.minutes = 59;
           }
         }
       }
 
       if (buttonValues[1] == LOW)  {
-        increment_white.seconds =  increment_white.seconds + 30;
+        increment_white.seconds =  increment_white.seconds + 1;
         if (increment_white.seconds >  59) {
           increment_white.seconds = 0;
           increment_white.minutes++;
@@ -206,10 +220,12 @@ void loop() {
       display.clearDisplay();
       display.setTextColor( WHITE);
       display.setTextSize(2);
+      display.setCursor(2, 0);
+      display.print("Increment:");
       //display.print(String(time_white.hours) + ":" + String(time_white.minutes) + ":" + String(time_white.seconds))
 
       if (increment_white.minutes < 10) {
-        display.setCursor(35, (SCREEN_HEIGHT / 2) - 8);
+        display.setCursor(2, (SCREEN_HEIGHT / 2) );
         display.print('0');
         display.print(increment_white.minutes);
         display.print(':');
@@ -219,7 +235,7 @@ void loop() {
       }
 
       if (increment_white.seconds < 10) {
-        display.setCursor(70, (SCREEN_HEIGHT / 2) - 8);
+        display.setCursor(37, (SCREEN_HEIGHT / 2) );
         display.print('0');
         display.print(increment_white.seconds);
       } else {
@@ -228,11 +244,21 @@ void loop() {
       display.display();
 
 
+
+
+
       if (buttonValues[3] == LOW)  {
+            PassState = HIGH;
+      }
+
+      if(PassState && buttonValues[3] == HIGH) {
+        PassState = LOW;
         states = black_time;
       }
 
-      delay(180);
+
+
+      delay(120);
 
       break;
 
