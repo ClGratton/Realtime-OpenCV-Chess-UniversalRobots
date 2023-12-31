@@ -13,14 +13,17 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT);
 int buttons[] = {2, 3, 3, 5, 6, 7}; // Create an array of button pin numbers
 bool buttonValues[] = {false, false, false, false, false, false}; // Create an array for button states
 
+int buzzerPin = 8;
+
 typedef enum {
-  stopt,
+  start,
   white_time,
   white_increment,
   black_time,
+  black_increment,
   white_move,
   black_move,
-  // ... other states
+  finish
 } State;
 
 State states;
@@ -48,7 +51,7 @@ bool black_button = HIGH;
 bool PassState;
 
 
-void printToScreen() {
+/*void printToScreen() {
   display.clearDisplay();
   display.setTextColor( WHITE);
   display.setTextSize(1);
@@ -58,7 +61,7 @@ void printToScreen() {
   display.setCursor(0, (SCREEN_HEIGHT / 2) - 8);
   display.println("Ready?");
   display.display();
-}
+  }*/
 
 
 void updateButtons() {
@@ -66,9 +69,6 @@ void updateButtons() {
     buttonValues[i] = digitalRead(buttons[i]);  // Read initial button state
   }
 }
-
-
-
 
 
 void setup() {
@@ -79,6 +79,7 @@ void setup() {
 
   Serial.begin(9600);
 
+  pinMode(buzzerPin, OUTPUT);
 
 
   if (!display.begin( SSD1306_SWITCHCAPVCC, 0x3C)) {
@@ -88,17 +89,19 @@ void setup() {
   display.clearDisplay();
   display.display();
 
-  states = stopt;
+  states = start;
 }
+
 
 void loop() {
 
   updateButtons();
+  buzzer();
   Serial.println(states);
 
   switch (states) {
 
-    case stopt:
+    case start:
 
       if (buttonValues[3] == LOW)  {
         PassState = HIGH;
@@ -147,41 +150,8 @@ void loop() {
         }
       }
 
+      printWhiteTime();
 
-      display.clearDisplay();
-      display.setTextColor( WHITE);
-      display.setTextSize(2);
-      display.setCursor(2, 0);
-      display.print("Time:");
-      //display.print(String(time_white.hours) + ":" + String(time_white.minutes) + ":" + String(time_white.seconds))
-      if (time_white.hours < 10) {
-        display.setCursor(2, (SCREEN_HEIGHT / 2) );
-        display.print('0');
-        display.print(time_white.hours);
-        display.print(':');
-      } else {
-        display.print(time_white.hours);
-        display.print(':');
-      }
-
-      if (time_white.minutes < 10) {
-        display.setCursor(37, (SCREEN_HEIGHT / 2) );
-        display.print('0');
-        display.print(time_white.minutes);
-        display.print(':');
-      } else {
-        display.print(time_white.minutes);
-        display.print(':');
-      }
-
-      if (time_white.seconds < 10) {
-        display.setCursor(72, (SCREEN_HEIGHT / 2) );
-        display.print('0');
-        display.print(time_white.seconds);
-      } else {
-        display.print(time_white.seconds);
-      };
-      display.display();
 
       if (buttonValues[3] == LOW)  {
         PassState = HIGH;
@@ -253,10 +223,6 @@ void loop() {
       };
       display.display();
 
-
-
-
-
       if (buttonValues[3] == LOW)  {
         PassState = HIGH;
       }
@@ -274,6 +240,24 @@ void loop() {
 
     case black_time:
 
+      printWhiteTime();
+
+      if (buttonValues[3] == LOW)  {
+        PassState = HIGH;
+      }
+
+      if (PassState && buttonValues[3] == HIGH) {
+        PassState = LOW;
+        states = black_increment;
+
+        
+        }
+      }
+
+      delay(120);
+      break;
+
+    case black_increment:
       if (buttonValues[3] == LOW)  {
         PassState = HIGH;
       }
@@ -281,8 +265,63 @@ void loop() {
       if (PassState && buttonValues[3] == HIGH) {
         PassState = LOW;
         states = white_move;
-        
 
+        
+        time_white.seconds = time_white.seconds + increment_white.seconds;
+        time_white.minutes = time_white.minutes + increment_white.minutes;
+
+        // Check for seconds overflow
+        if (time_white.seconds >= 60) {
+          time_white.seconds -= 60;
+          time_white.minutes ++;
+        }
+
+        // Check for minutes overflow
+        if (time_white.minutes >= 60) {
+          time_white.minutes -= 60;
+          time_white.hours++;
+      }
+
+      break;
+
+    case white_move:
+
+      printWhiteTime();
+
+
+      if (black_button) {
+        millis1 = millis();
+        black_button = LOW;
+      }
+
+      if ((int(millis()) - millis1) > 1000) {
+        time_white.seconds --;
+        millis1 = 0;
+        black_button = HIGH;
+
+        if (time_white.seconds <= 0 && time_white.minutes <= 0 && time_white.hours <= 0) {
+          states = finish;
+        }
+
+        if ((time_white.seconds < 0)) {
+          time_white.seconds = 59;
+          time_white.minutes--;
+        }
+
+        if (time_white.minutes < 0 && time_white.hours != 0) {
+          time_white.seconds = 59;
+          time_white.minutes = 59;
+          time_white.hours--;
+        }
+      }
+
+      if (buttonValues[4] == LOW)  {
+        PassState = HIGH;
+      }
+
+      if (PassState && buttonValues[4] == HIGH) {
+        PassState = LOW;
+        states = black_move;
 
         time_white.seconds = time_white.seconds + increment_white.seconds;
         time_white.minutes = time_white.minutes + increment_white.minutes;
@@ -297,95 +336,40 @@ void loop() {
         if (time_white.minutes >= 60) {
           time_white.minutes -= 60;
           time_white.hours++;
-        }
       }
 
 
-
-
-      break;
-
-    case white_move:
-
-      display.clearDisplay();
-      display.setTextColor( WHITE);
-      display.setTextSize(2);
-      display.setCursor(2, 0);
-      display.print("Time:");
-      //display.print(String(time_white.hours) + ":" + String(time_white.minutes) + ":" + String(time_white.seconds))
-      if (time_white.hours < 10) {
-        display.setCursor(2, (SCREEN_HEIGHT / 2) );
-        display.print('0');
-        display.print(time_white.hours);
-        display.print(':');
-      } else {
-        display.print(time_white.hours);
-        display.print(':');
-      }
-
-      if (time_white.minutes < 10) {
-        display.setCursor(37, (SCREEN_HEIGHT / 2) );
-        display.print('0');
-        display.print(time_white.minutes);
-        display.print(':');
-      } else {
-        display.print(time_white.minutes);
-        display.print(':');
-      }
-
-      if (time_white.seconds < 10) {
-        display.setCursor(72, (SCREEN_HEIGHT / 2) );
-        display.print('0');
-        display.print(time_white.seconds);
-      } else {
-        display.print(time_white.seconds);
-      };
-      display.display();
-
-     
-      if (black_button) {
-        millis1 = millis();
-        black_button = LOW;
-      }
-      
-      if ((int(millis()) - millis1) > 1000) {
-        time_white.seconds --;
-        millis1 = 0;
-        black_button = HIGH;
-
-         if(time_white.seconds <= 0 && time_white.minutes <= 0 && time_white.hours <= 0) {
-           black_button = LOW;
-        }
-
-        if ((time_white.seconds < 0)) {
-          time_white.seconds = 59;
-          time_white.minutes--;
-        }
-
-        if (time_white.minutes < 0 && time_white.hours != 0) {
-          time_white.seconds = 59;
-          time_white.minutes = 59;
-          time_white.hours--;
-        }
-
-       
-      }
-
-      if (buttonValues[4] == LOW)  {
-        PassState = HIGH;
-      }
-
-      if (PassState && buttonValues[4] == HIGH) {
-        PassState = LOW;
-        states = black_move;
-      }
-
-      
 
       break;
 
     case black_move:
 
+      if (buttonValues[5] == LOW)  {
+        PassState = HIGH;
+      }
+
+      if (PassState && buttonValues[5] == HIGH) {
+        PassState = LOW;
+        states = white_move;
+
+        time_black.seconds = time_black.seconds + increment_black.seconds;
+        time_black.minutes = time_black.minutes + increment_black.minutes;
+
+        // Check for seconds overflow
+        if (time_black.seconds >= 60) {
+          time_black.seconds -= 60;
+          time_black.minutes ++;
+        }
+
+        // Check for minutes overflow
+        if (time_black.minutes >= 60) {
+          time_black.minutes -= 60;
+          time_black.hours++;
+      }
+      break;
+
+    case finish:
+      printWhiteTime();
       break;
   }
 }
