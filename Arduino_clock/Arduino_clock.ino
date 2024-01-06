@@ -92,6 +92,8 @@ void buzzer() {
   }
 }
 
+
+//Control leds
 void leds() {
   if (states == white_move || states == black_move) {
     if (states == white_move) {
@@ -184,6 +186,7 @@ void printBlackTime() {
 }
 
 
+
 void setup() {
   for (int i = 0; i < sizeof(buttons) / sizeof(buttons[0]); i++) {
     pinMode(buttons[i], INPUT_PULLUP);
@@ -220,7 +223,10 @@ void loop() {
 
   switch (states) {
 
+    //Start case
     case start:
+      time_white               = {00, 00, 00};
+      time_black               = {00, 00, 00};
 
       if (buttonValues[3] == LOW)  {
         PassState = HIGH;
@@ -234,7 +240,7 @@ void loop() {
 
       break;
 
-
+    //White Time Case
     case white_time:
 
       if (buttonValues[0] == LOW)  {
@@ -270,6 +276,7 @@ void loop() {
       }
 
       printWhiteTime();
+      printBlackTime();
 
 
       if (buttonValues[3] == LOW)  {
@@ -285,6 +292,8 @@ void loop() {
 
       break;
 
+
+    //White increment case
     case white_increment:
       if (buttonValues[0] == LOW)  {
         if (!(increment_white.seconds == 0 && increment_white.minutes == 0)) {
@@ -321,7 +330,6 @@ void loop() {
       display1.setTextSize(2);
       display1.setCursor(2, 0);
       display1.print("Increment:");
-      //display.print(String(time_white.hours) + ":" + String(time_white.minutes) + ":" + String(time_white.seconds))
 
       if (increment_white.minutes < 10) {
         display1.setCursor(2, (SCREEN_HEIGHT1 / 2) );
@@ -355,9 +363,45 @@ void loop() {
 
       break;
 
+
+
+    //Black time case
     case black_time:
+    
+      if (buttonValues[0] == LOW)  {
+        if (!(time_black.seconds == 0 && time_black.minutes == 0 && time_black.hours == 0)) {
+          time_black.seconds =  time_black.seconds - 30;
+
+          if ((time_black.seconds < 0)) {
+            time_black.seconds = 30;
+            time_black.minutes--;
+          }
+
+          if (time_black.minutes < 0 && time_black.hours != 0) {
+            time_black.seconds = 30;
+            time_black.minutes = 59;
+            time_black.hours--;
+          }
+        }
+      }
+
+      if (buttonValues[1] == LOW)  {
+        time_black.seconds =  time_black.seconds + 30;
+        if (time_black.seconds >  59) {
+          time_black.seconds = 0;
+          time_black.minutes++;
+        }
+
+        // If minutes are also zero, decrement hours
+        if (time_black.minutes > 59 ) {
+          time_black.seconds = 0;
+          time_black.minutes = 0;
+          time_black.hours++;
+        }
+      }
 
       printWhiteTime();
+      printBlackTime();
 
       if (buttonValues[3] == LOW)  {
         PassState = HIGH;
@@ -371,7 +415,68 @@ void loop() {
       delay(120);
       break;
 
+
+    //Black increment case
     case black_increment:
+
+      if (buttonValues[0] == LOW)  {
+        if (!(increment_black.seconds == 0 && increment_black.minutes == 0)) {
+          increment_black.seconds =  increment_black.seconds - 1;
+
+          if ((increment_black.seconds < 0)) {
+            increment_black.seconds = 59;
+            increment_black.minutes--;
+          }
+
+          if (increment_black.minutes < 0 ) {
+            increment_black.seconds = 59;
+            increment_black.minutes = 59;
+          }
+        }
+      }
+
+      if (buttonValues[1] == LOW)  {
+        increment_black.seconds =  increment_black.seconds + 1;
+        if (increment_black.seconds >  59) {
+          increment_black.seconds = 0;
+          increment_black.minutes++;
+        }
+
+        // If minutes are also zero, decrement hours
+        if (increment_black.minutes > 59 ) {
+          increment_black.seconds = 0;
+          increment_black.minutes = 0;
+        }
+      }
+
+
+      display2.clearDisplay();
+      display2.setTextColor( WHITE);
+      display2.setTextSize(2);
+      display2.setCursor(2, 0);
+      display2.print("Increment:");
+
+      if (increment_black.minutes < 10) {
+        display2.setCursor(2, (SCREEN_HEIGHT1 / 2) );
+        display2.print('0');
+        display2.print(increment_black.minutes);
+        display2.print(':');
+      } else {
+        display2.print(increment_black.minutes);
+        display2.print(':');
+      }
+
+      if (increment_black.seconds < 10) {
+        display2.setCursor(37, (SCREEN_HEIGHT1 / 2) );
+        display2.print('0');
+        display2.print(increment_black.seconds);
+      } else {
+        display2.print(increment_black.seconds);
+      };
+      display1.display();
+
+
+
       if (buttonValues[3] == LOW)  {
         PassState = HIGH;
       }
@@ -398,9 +503,12 @@ void loop() {
 
         break;
 
+
+      //White move case
       case white_move:
 
         printWhiteTime();
+        printBlackTime();
 
 
         if (black_button) {
@@ -453,11 +561,11 @@ void loop() {
           }
         }
 
-        if (buttonValues[3] == LOW)  {
+        if (buttonValues[2] == LOW)  {
           PassState2 = HIGH;
         }
 
-        if (PassState2 && buttonValues[3] == HIGH) {
+        if (PassState2 && buttonValues[2] == HIGH) {
           PassState2 = LOW;
           states = finish;
         }
@@ -465,6 +573,10 @@ void loop() {
         break;
 
       case black_move:
+
+        printWhiteTime();
+        printBlackTime();
+
 
         if (buttonValues[5] == LOW)  {
           PassState = HIGH;
@@ -503,12 +615,13 @@ void loop() {
 
       case finish:
         printWhiteTime();
+        printBlackTime();
 
-        if (buttonValues[3] == LOW)  {
+        if (buttonValues[2] == LOW)  {
           PassState = HIGH;
         }
 
-        if (PassState && buttonValues[3] == HIGH) {
+        if (PassState && buttonValues[2] == HIGH) {
           PassState = LOW;
           states = start;
         }
