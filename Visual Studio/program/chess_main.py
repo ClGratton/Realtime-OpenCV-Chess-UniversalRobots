@@ -3,6 +3,7 @@
 ###################################################################################
 import os
 import shutil
+import atexit
 from pathlib import Path
 import chess
 import chess.engine
@@ -15,7 +16,7 @@ from urx import Robot
 ## Import files
 ###################################################################################
 from image_methods.detect_points import get_points
-from image_methods.read_warp_img import get_warp_img
+from image_methods.board_tracker import BoardTracker, BoardTrackingError
 from image_methods.find_position_black import infer_human_move, MoveDetectionError
 from arm_methods.calculatePosition import calculatePosition
 from arm_methods.movePiece import movePiece
@@ -23,19 +24,31 @@ from config import camera_ip, robot_ip, robotExists, debug, time_limit, eaten_po
 from arm_methods.getPieceOffset import getPieceOffset
 
 
+_camera = None
+
+
+def close_camera():
+    global _camera
+    if _camera is not None:
+        _camera.release()
+        _camera = None
+
+
+atexit.register(close_camera)
+
+
 def read_camera_frame(retries=3):
-    """Read one camera frame, releasing the stream on every attempt."""
+    """Read a live stream continuously; reconnect after dropped frames."""
+    global _camera
     for attempt in range(retries):
-        capture = cv2.VideoCapture(camera_ip)
-        try:
-            if capture.isOpened():
-                # Network streams often return a few stale/empty frames at connect.
-                for _ in range(5):
-                    ok, frame = capture.read()
-                    if ok and frame is not None:
-                        return True, frame
-        finally:
-            capture.release()
+        if _camera is None or not _camera.isOpened():
+            close_camera()
+            _camera = cv2.VideoCapture(camera_ip)
+        if _camera.isOpened():
+            ok, frame = _camera.read()
+            if ok and frame is not None:
+                return True, frame
+        close_camera()
         time.sleep(0.25 * (attempt + 1))
     raise RuntimeError(f"Unable to read a frame from chess camera: {camera_ip}")
 
@@ -325,41 +338,86 @@ while True:
 
 
 ###################################################################################
-## Image warp_prespective
+## Live chessboard calibration
 ###################################################################################
 
+tracker = BoardTracker(img_resize)
+_, img = read_camera_frame()
+img = cv2.resize(img, img_resize)
+# Reuse of saved pixel coordinates is unsafe when the phone can move. Detect
+# on the current frame; get_points offers manual corners if detection fails.
+warp_points = get_points(img, 4)
 while True:
-    print("Warp perspective of the image?[y/n]:", end=" ")
-    answer = str(input())
-    ret, img = read_camera_frame()
-    img = cv2.resize(img, (800, 800))
-    width, height = 800, 800
-
-    if answer.lower() == "y":
-        #print("Image Shape:", img.shape)
+    try:
+        result = tracker.initialize(img, warp_points)
+        break
+    except BoardTrackingError as error:
+        print(f"Invalid board calibration: {error}")
+        _, img = read_camera_frame()
+        img = cv2.resize(img, img_resize)
         warp_points = get_points(img, 4)
-        #print("Warp Points:", warp_points)
+cv2.imshow("Board live", result)
+cv2.waitKey(1)
 
-        pts1 = np.float32([[warp_points[0][0], warp_points[0][1]],
-                           [warp_points[1][0], warp_points[1][1]],
-                           [warp_points[3][0], warp_points[3][1]],
-                           [warp_points[2][0], warp_points[2][1]]])
 
-        pts2 = np.float32([[0, 0], [width, 0], [0, height], [width, height]])
-        #print("pts1:", pts1)
-        #print("pts2:", pts2)
+def get_board_img(frame):
+    return tracker.update(cv2.resize(frame, img_resize))
 
-        np.savez(dir_path + "/chess_board_warp_prespective.npz", pts1=pts1, pts2=pts2)
-        result = get_warp_img(img, dir_path, img_resize)
-        cv2.imshow("result", result)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        break
-    elif answer.lower() == "n":
-        result = get_warp_img(img, dir_path, img_resize)
-        break
-    else:
-        print("Enter valid input")
+
+def relock_board():
+    """Pause until the operator has restored the physical game and camera."""
+    print("Board tracking lost. Do not move a piece or the robot.")
+    print("Make the physical board match the displayed game and steady the phone;")
+    print("you will identify the a8 corner after relocking,")
+    print("then press 'r' in the camera window to find the board again.")
+    while True:
+        try:
+            _, frame = read_camera_frame()
+        except RuntimeError as error:
+            print(f"Waiting for camera: {error}")
+            time.sleep(0.5)
+            continue
+        frame = cv2.resize(frame, img_resize)
+        cv2.imshow("Board live", frame)
+        if cv2.waitKey(30) == ord('r'):
+            corners = get_points(frame, 4)
+            try:
+                result = tracker.initialize(frame, corners)
+            except BoardTrackingError as error:
+                print(f"Board still cannot be locked: {error}")
+                continue
+            cv2.imshow("Board live", result)
+            return result
+
+
+def safe_board_img(frame):
+    try:
+        return get_board_img(frame)
+    except BoardTrackingError as error:
+        print(f"Camera view rejected: {error}")
+        return relock_board()
+
+
+def wait_for_key_tracking(key):
+    """Keep locating the board during an operator's physical move."""
+    first_failure_at = None
+    while True:
+        try:
+            _, frame = read_camera_frame()
+            view = get_board_img(frame)
+        except (RuntimeError, BoardTrackingError) as error:
+            if first_failure_at is None:
+                first_failure_at = time.monotonic()
+            if time.monotonic() - first_failure_at >= 1.0:
+                print(f"Camera view rejected: {error}")
+                relock_board()
+                return None
+            cv2.waitKey(30)
+            continue
+        first_failure_at = None
+        cv2.imshow("Board live", view)
+        if cv2.waitKey(1) == ord(key):
+            return view
 
 
 
@@ -372,7 +430,7 @@ while True:
         if ans == "y" or ans == "Y":
             ret , img = read_camera_frame()
             img =   cv2.resize(img,(800,800))
-            img = get_warp_img(img,dir_path,img_resize)
+            img = safe_board_img(img)
             # Chessboard square size
             square_size = 100
 
@@ -427,7 +485,7 @@ while True:
         # show boxes
         ret , img = read_camera_frame()
         img =   cv2.resize(img,(800,800))
-        img = get_warp_img(img,dir_path,img_resize)
+        img = safe_board_img(img)
         img_box = img.copy()
         for i in range(8):
             for j in range(8):
@@ -463,7 +521,7 @@ while True:
 
             ret,img = read_camera_frame()
             img = cv2.resize(img,(800,800))
-            img = get_warp_img(img,dir_path,img_resize)
+            img = safe_board_img(img)
             img_box = img.copy()
             for i in range(8):
                 for j in range(8):
@@ -528,7 +586,7 @@ while not board.is_game_over(claim_draw=True):
     if board.turn and board.is_checkmate() == False:
         ret , img = read_camera_frame()
         img =   cv2.resize(img,(800,800))
-        img = get_warp_img(img,dir_path,img_resize)
+        img = safe_board_img(img)
         chess_board,player_bool_position = fen2board(board.fen())
         result = engine.play(board, chess.engine.Limit(time_limit)) 
 
@@ -618,8 +676,9 @@ while not board.is_game_over(claim_draw=True):
         if not robotExists:
             print("Press 'w' after moving the piece manually")
             while True:
-                if cv2.waitKey(1) == ord('w'):
+                if wait_for_key_tracking('w') is not None:
                     break
+                print("Restore the position shown in the game, then make the AI move again.")
         # Advance the digital board only after the physical move is complete.
         board.push(result.move)
         last_move = result.move.uci()
@@ -630,29 +689,21 @@ while not board.is_game_over(claim_draw=True):
     ## black turn
     if not board.turn and not board.is_game_over(claim_draw=True):
         while not board.turn:
-            ret, img_1 = read_camera_frame()
-            img_1 = cv2.resize(img_1, (800, 800))
-            img_1 = get_warp_img(img_1, dir_path, img_resize)
-            if img_1 is None:
-                raise RuntimeError("Camera calibration could not warp the board.")
+            try:
+                _, frame = read_camera_frame()
+                img_1 = get_board_img(frame)
+            except (RuntimeError, BoardTrackingError) as error:
+                print(f"Camera view rejected: {error}")
+                relock_board()
+                continue
             show_game(img_1, board, last_move)
 
             print("Black turn: finish the whole move, including the rook in castling.")
             print("Press 'q' only when your hand has left the board.")
-            while cv2.waitKey(1) != ord('q'):
-                pass
-
-            while True:
-                try:
-                    ret, img_2 = read_camera_frame()
-                    break
-                except RuntimeError as error:
-                    print(f"Camera read failed: {error}; retrying...")
-                    time.sleep(0.5)
-            img_2 = cv2.resize(img_2, (800, 800))
-            img_2 = get_warp_img(img_2, dir_path, img_resize)
+            img_2 = wait_for_key_tracking('q')
             if img_2 is None:
-                print("Camera calibration failed. Restore the view and retry.")
+                # The before/after pair is no longer trustworthy. The user
+                # restored the old position during relock; take a new before.
                 continue
 
             try:
@@ -695,7 +746,7 @@ while not board.is_game_over(claim_draw=True):
         print("Checkmate!")
         ret , img = read_camera_frame()
         img_1 =   cv2.resize(img,(800,800))
-        game_img = get_warp_img(img_1,dir_path,img_resize)
+        game_img = safe_board_img(img_1)
         show_game(game_img,board,last_move)
         cv2.waitKey(0)
         break

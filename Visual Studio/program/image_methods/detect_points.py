@@ -18,16 +18,13 @@ def _ordered_corners(corners):
     return points
 
 
-def detect_board_corners(image):
+def detect_board_corners(image, fast=False):
     """Detect 7x7 inner intersections and extrapolate the board's outer corners."""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
     detector = getattr(cv2, "findChessboardCornersSB", None)
     if detector is not None:
-        found, corners = detector(
-            gray,
-            (7, 7),
-            flags=cv2.CALIB_CB_EXHAUSTIVE | cv2.CALIB_CB_ACCURACY,
-        )
+        flags = 0 if fast else cv2.CALIB_CB_EXHAUSTIVE | cv2.CALIB_CB_ACCURACY
+        found, corners = detector(gray, (7, 7), flags=flags)
     else:
         found, corners = cv2.findChessboardCorners(
             gray,
@@ -65,6 +62,31 @@ def _draw_circle(event, x, y, flags, state):
         state["point"] = (x, y)
 
 
+def orient_corners(corners, a8_index):
+    """Return image corners ordered as physical a8, h8, h1, a1."""
+    if a8_index not in range(4):
+        raise ValueError("a8 corner index must be between zero and three.")
+    return np.roll(np.asarray(corners).reshape(4, 2), -a8_index, axis=0)
+
+
+def _ask_a8(image, corners):
+    display = image.copy()
+    for index, point in enumerate(corners):
+        x, y = map(int, point)
+        cv2.circle(display, (x, y), 10, (0, 0, 255), 3)
+        cv2.putText(display, str(index + 1), (x + 12, y - 12),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+    cv2.putText(display, "Which corner is a8? Press 1-4", (15, 35),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+    print("Identify the physical a8 corner: press its displayed number (1-4).")
+    while True:
+        cv2.imshow(WINDOW, display)
+        key = cv2.waitKey(30)
+        if ord("1") <= key <= ord("4"):
+            cv2.destroyWindow(WINDOW)
+            return orient_corners(corners, key - ord("1")).astype(int).tolist()
+
+
 def get_points(image, numOfPoints=4):
     if numOfPoints != 4:
         raise ValueError("Chessboard calibration expects four outer corners.")
@@ -72,7 +94,7 @@ def get_points(image, numOfPoints=4):
     automatic = detect_board_corners(resized)
     if automatic is not None:
         print("Rilevati automaticamente i quattro angoli della scacchiera.")
-        return automatic.astype(int).tolist()
+        return _ask_a8(resized, automatic)
 
     print("Rilevamento automatico non riuscito: seleziona i quattro angoli a mano.")
     state = {"point": None}
@@ -91,4 +113,4 @@ def get_points(image, numOfPoints=4):
             cv2.circle(display, point, 5, (0, 0, 255), -1)
             state["point"] = None
     cv2.destroyWindow(WINDOW)
-    return points
+    return _ask_a8(resized, points)
