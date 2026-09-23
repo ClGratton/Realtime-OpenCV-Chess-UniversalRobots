@@ -1,131 +1,104 @@
+"""Infer a human move from square changes and python-chess legal moves.
+
+The camera does not classify piece types. It measures which squares changed;
+the tracked board supplies legal piece identity and move rules.
+"""
+import chess
 import cv2
 import numpy as np
 
-def fen2board_black(fen_line):
-    black_player_bool_position = []
-    for row in fen_line.split(' ')[0].split('/'):
-        bool_row = []
-        for cell in list(row):
-            if cell.isnumeric():
-                for i in range(int(cell)):
-                    bool_row.append(0)
-            else:
-                if cell.islower():
-                    bool_row.append(1)
-                else:
-                    bool_row.append(0)
-        black_player_bool_position.append(bool_row)
-    black_player_bool_position = np.array(black_player_bool_position)
-    return black_player_bool_position
 
-def rectContains(rect,mid_point):
-    logic = rect[0]<mid_point[0]<rect[2] and rect[1]<mid_point[1]<rect[3]
-    return logic
+class MoveDetectionError(ValueError):
+    """The image does not identify one legal physical move."""
 
-def find_current_past_position(img_1,img_2,boxes,bool_position,FEN_line,chess_board,number_to_position_map,map_position):
-    past_bool_position = bool_position
-    current_bool_position = bool_position
-    castling_type = None
-    diff_position = np.zeros((8,8),dtype=int)
-    past_black_bool_position = fen2board_black(FEN_line)
 
-    image_diff = cv2.absdiff(img_1,img_2)
-    # cv2.imshow("diff",image_diff)
-    image_diff_gray = cv2.cvtColor(image_diff,cv2.COLOR_BGR2GRAY)
-    # cv2.imshow("Gray",image_diff_gray)
-    matrix,thresold = cv2.threshold(image_diff_gray,10,255,cv2.THRESH_BINARY)
-    #cv2.imshow("thre",thresold)
-    cnts,_ = cv2.findContours(thresold, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-    if len(cnts) >= 2:
-        required_contoures_mid_point = []
-        for c in cnts:
-            area = cv2.contourArea(c)
-            if area> 500:
-                (x, y, w, h) = cv2.boundingRect(c)
-                required_contoures_mid_point.append([x+int(w/2),y+int(h/2)])
-                #cv2.rectangle(diff, (x, y), (x + w, y + h), (0, 0, 255), 2)
+def affected_squares(board, move):
+    """Squares whose images should change after a legal standard-chess move."""
+    if board.chess960:
+        raise MoveDetectionError("Chess960 is not supported by this board mapper.")
 
-        flag = np.zeros((8,8),dtype=int)
-        for i in range(8):
-                for j in range(8):
-                    for mid_point in required_contoures_mid_point:
-                        if(rectContains(boxes[i][j],mid_point)) and flag[i][j]==0:
-                            diff_position[i][j] = 2
-                            flag[i][j]=1
+    changed = {move.from_square, move.to_square}
+    if board.is_en_passant(move):
+        captured = move.to_square - 8 if board.turn == chess.WHITE else move.to_square + 8
+        changed.add(captured)
+    if board.is_castling(move):
+        rank = 0 if board.turn == chess.WHITE else 7
+        if board.is_kingside_castling(move):
+            changed.update((chess.square(7, rank), chess.square(5, rank)))
+        else:
+            changed.update((chess.square(0, rank), chess.square(3, rank)))
+    return frozenset(changed)
 
-        
-        temp_matrix = past_black_bool_position - diff_position
-        #print('TEMP MATRIX:',temp_matrix)
-        #[[ 1 -1  1  1  1  1  1  1]
-        #[ 1  1  1  1  1  1  1  1]
-        #[-2  0  0  0  0  0  0  0]
-        #[ 0  0  0  0  0  0  0  0]
-        #[ 0  0  0  0  0  0  0  0]
-        #[ 0  0  0  0  0  0  0  0]
-        #[ 0  0  0  0  0  0  0  0]
-        #[ 0  0  0  0  0  0  0  0]]
-        
-        position_of_past_black = np.where(temp_matrix == -1)
-        position_of_new_black = np.where(temp_matrix == -2)
-        
-        #print('position:', position_of_past_black,position_of_new_black)
-        #(array([0], dtype=int64), array([1], dtype=int64)) (array([2], dtype=int64), array([0], dtype=int64))
-        
-        player_moved = chess_board[position_of_past_black[0][0]][position_of_past_black[1][0]] 
 
-        #print('player_moved:', player_moved)
-        #n
-        
-        #print('chess_board:', chess_board)
-        #[['r' 'n' 'b' 'q' 'k' 'b' 'n' 'r']
-            #['p' 'p' 'p' 'p' 'p' 'p' 'p' 'p']
-            #['1' '1' '1' '1' '1' '1' '1' '1']
-            #['1' '1' '1' '1' '1' '1' '1' '1']
-            #['1' '1' '1' '1' '1' '1' '1' '1']
-            #['1' '1' '1' '1' '1' 'N' '1' '1']
-            #['P' 'P' 'P' 'P' 'P' 'P' 'P' 'P']
-            #['R' 'N' 'B' 'Q' 'K' 'B' '1' 'R']]
+def changed_squares_from_images(before, after, boxes):
+    """Return changed chess squares in a stable, already warped camera view."""
+    if before is None or after is None or before.shape != after.shape:
+        raise MoveDetectionError("Camera frames are missing or have different sizes.")
+    if np.asarray(boxes).shape != (8, 8, 4):
+        raise MoveDetectionError("The chessboard box calibration is invalid.")
 
-        chess_board[position_of_past_black]=1
-        chess_board[position_of_new_black]=player_moved
+    def gray(image):
+        return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
 
-        #print('chess_board:', chess_board)
-        #[['r' '1' 'b' 'q' 'k' 'b' 'n' 'r']
-            #['p' 'p' 'p' 'p' 'p' 'p' 'p' 'p']
-            #['n' '1' '1' '1' '1' '1' '1' '1']
-            #['1' '1' '1' '1' '1' '1' '1' '1']
-            #['1' '1' '1' '1' '1' '1' '1' '1']
-            #['1' '1' '1' '1' '1' 'N' '1' '1']
-            #['P' 'P' 'P' 'P' 'P' 'P' 'P' 'P']
-            #['R' 'N' 'B' 'Q' 'K' 'B' '1' 'R']]
+    earlier = cv2.GaussianBlur(gray(before), (5, 5), 0)
+    later = cv2.GaussianBlur(gray(after), (5, 5), 0)
+    difference = cv2.absdiff(earlier, later)
+    scores = np.zeros((8, 8), dtype=np.float32)
 
-        move_word = number_to_position_map[int(position_of_past_black[0][0])][int(position_of_past_black[1][0])]
-        
-        #print('move_word:', move_word)
-        #b8
-        
-        move_word += number_to_position_map[int(position_of_new_black[0][0])][int(position_of_new_black[1][0])]
+    for row in range(8):
+        for column in range(8):
+            left, top, right, bottom = map(int, boxes[row, column])
+            width, height = right - left, bottom - top
+            if width < 12 or height < 12:
+                raise MoveDetectionError("A calibrated square is too small.")
+            margin_x, margin_y = max(2, width // 8), max(2, height // 8)
+            interior = difference[
+                top + margin_y:bottom - margin_y,
+                left + margin_x:right - margin_x,
+            ]
+            if interior.size == 0:
+                raise MoveDetectionError("A calibrated square lies outside the image.")
+            scores[row, column] = float(np.mean(interior > 18))
 
-        #print('move_word:', move_word)
-        #b8a6
+    background = float(np.median(scores))
+    if background > 0.08:
+        raise MoveDetectionError(
+            "Most squares changed: steady the phone, lighting and hands, then retry."
+        )
+    threshold = max(0.035, background + 0.025)
+    changed = {
+        chess.square(column, 7 - row)
+        for row in range(8)
+        for column in range(8)
+        if scores[row, column] >= threshold
+    }
+    if not 2 <= len(changed) <= 4:
+        names = ", ".join(sorted(chess.square_name(square) for square in changed))
+        raise MoveDetectionError(
+            f"Expected 2-4 changed squares; observed {len(changed)} ({names})."
+        )
+    return frozenset(changed)
 
-        position1 = str(move_word)[0:2]
-        position2 = str(move_word)[2:4]
 
-        box_1_coordinate = map_position[position1]
-        box_2_coordinate = map_position[position2]
-        
-        position1_box = boxes[box_1_coordinate[0]][box_1_coordinate[1]]
-        position2_box = boxes[box_2_coordinate[0]][box_2_coordinate[1]]
+def infer_human_move(before, after, boxes, board):
+    """Return legal move candidates matching exactly the observed changed squares.
 
-        draw_img = img_2.copy()
-        cv2.rectangle(draw_img,(position1_box[0],position1_box[1]),(position1_box[2],position1_box[3]),(0,0,255),3)
-        cv2.rectangle(draw_img,(position2_box[0],position2_box[1]),(position2_box[2],position2_box[3]),(0,255,0),3)
-        #print(move_word)
-        #print(draw_img)
-        #print(castling_type)
-        return move_word,draw_img,1
-        #print('exiting')
-    else:
-        return " ",img_2,0
-
+    Ordinary moves have one candidate. Promotion choices share the same visual
+    signature and must be selected by the player.
+    """
+    observed = changed_squares_from_images(before, after, boxes)
+    matches = [
+        move for move in board.legal_moves
+        if affected_squares(board, move) == observed
+    ]
+    if not matches:
+        names = ", ".join(sorted(chess.square_name(square) for square in observed))
+        raise MoveDetectionError(
+            f"Square changes ({names}) do not match a legal move. Restore the board."
+        )
+    endpoints = {(move.from_square, move.to_square) for move in matches}
+    if len(endpoints) != 1:
+        raise MoveDetectionError("The image matches multiple legal moves.")
+    if len(matches) > 1 and not all(move.promotion for move in matches):
+        raise MoveDetectionError("The move is ambiguous in the image.")
+    return matches

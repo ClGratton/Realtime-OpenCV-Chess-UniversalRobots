@@ -2,6 +2,8 @@
 ## Import Libraries
 ###################################################################################
 import os
+import shutil
+from pathlib import Path
 import chess
 import chess.engine
 import cv2
@@ -9,18 +11,35 @@ import numpy as np
 import time
 from urx import Robot
 
-usb_camera_index = 0
-cap = cv2.VideoCapture(usb_camera_index)
 ###################################################################################
 ## Import files
 ###################################################################################
 from image_methods.detect_points import get_points
 from image_methods.read_warp_img import get_warp_img
-from image_methods.find_position_black import find_current_past_position
+from image_methods.find_position_black import infer_human_move, MoveDetectionError
 from arm_methods.calculatePosition import calculatePosition
 from arm_methods.movePiece import movePiece
-from config import camera_ip, robot_ip, robotExists, debug, time_limit, highest_piece, eaten_position, checkboard_coord_start, checkboard_coord_end
-from program.arm_methods.getPieceOffset import getPieceHeight
+from config import camera_ip, robot_ip, robotExists, debug, time_limit, eaten_position, checkboard_coord_start, checkboard_coord_end
+from arm_methods.getPieceOffset import getPieceOffset
+
+
+def read_camera_frame(retries=3):
+    """Read one camera frame, releasing the stream on every attempt."""
+    for attempt in range(retries):
+        capture = cv2.VideoCapture(camera_ip)
+        try:
+            if capture.isOpened():
+                # Network streams often return a few stale/empty frames at connect.
+                for _ in range(5):
+                    ok, frame = capture.read()
+                    if ok and frame is not None:
+                        return True, frame
+        finally:
+            capture.release()
+        time.sleep(0.25 * (attempt + 1))
+    raise RuntimeError(f"Unable to read a frame from chess camera: {camera_ip}")
+
+
 ###################################################################################
 ## User defined variables
 ###################################################################################
@@ -31,15 +50,26 @@ from program.arm_methods.getPieceOffset import getPieceHeight
 ###################################################################################
 points = []    # contains chess board corners points
 boxes = np.zeros((8,8,4),dtype=int)    # contains top-left and bottom-right point of chessboard boxes
-fen_line = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR' # fen line of chess board
-board = chess.Board(fen=fen_line) # object of chess board
+board = chess.Board() # object of chess board
 dir_path = os.path.dirname(os.path.realpath(__file__))+"/numpy_saved" # path of current directory
 check_lenght = 0
 check_height = 0
 # device = cv2.VideoCapture(1) # set devidce for read image (1: for tacking input from usb-webcam)
 img_resize = (800,800) # set o/p image size
 image = []
-engine = chess.engine.SimpleEngine.popen_uci("C:\stockfish_16\stockfish-windows-x86-64-avx2.exe") # stockfish engine
+def find_stockfish():
+    configured = os.environ.get("STOCKFISH_PATH")
+    candidates = [configured, shutil.which("stockfish"), shutil.which("stockfish.exe")]
+    for candidate in candidates:
+        if candidate and Path(candidate).is_file():
+            return str(candidate)
+    raise FileNotFoundError(
+        "Stockfish non trovato. Installa Stockfish e imposta STOCKFISH_PATH "
+        "oppure aggiungi stockfish al PATH."
+    )
+
+
+engine = chess.engine.SimpleEngine.popen_uci(find_stockfish())
 chess_board = []   # it will store chess board matrix
 player_bool_position =[]
 bool_position = np.zeros((8,8),dtype=int)
@@ -243,11 +273,10 @@ def set_legal_positions(game_image,board,boxes):
                 cv2.rectangle(game_img, (int(box1[0]), int(box1[1])), (int(box1[2]), int(box1[3])), (255,0,0), 2)
                 cv2.putText(game_img," {}".format(chess_board[i][j]),(int(box1[2])-70, int(box1[3])-50),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,255),2)
     
-    cv2.putText(game_img,"illegal move ",(830,30),cv2.FONT_HERSHEY_SIMPLEX,1,(0,0,255),2)
-    cv2.putText(game_img,"White ",(1050,30),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),2)
+    cv2.putText(game_img,"Move not recognized",(830,30),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,0,255),2)
     cv2.putText(game_img,"Press",(830,80),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),2)
     cv2.putText(game_img,"S",(925,80),cv2.FONT_HERSHEY_SIMPLEX,1,(0,0,255),2)
-    cv2.putText(game_img," when All player Set ",(960,80),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),2)
+    cv2.putText(game_img," after restoring board ",(960,80),cv2.FONT_HERSHEY_SIMPLEX,0.8,(255,255,255),2)
     
     chess_board = fen2board_2(str(board.fen()))
     padding_col = 0
@@ -262,7 +291,7 @@ def set_legal_positions(game_image,board,boxes):
         padding_col += 40
 
     cv2.imshow("Game",game_img)
-    print("Press 's' after your move")
+    print("Press 's' after restoring the previous board position")
     while True:
         if cv2.waitKey(1) == ord('s'):
             break
@@ -279,7 +308,7 @@ while True:
         print("Press q to exit : ")
         while True:
             ## show frame from camera and set positon by moving camera
-            flag , img = cv2.VideoCapture(camera_ip).read()
+            flag , img = read_camera_frame()
             img = cv2.resize(img,img_resize)
             if flag:
                 cv2.imshow("Set camera position",img)
@@ -302,7 +331,7 @@ while True:
 while True:
     print("Warp perspective of the image?[y/n]:", end=" ")
     answer = str(input())
-    ret, img = cv2.VideoCapture(camera_ip).read()
+    ret, img = read_camera_frame()
     img = cv2.resize(img, (800, 800))
     width, height = 800, 800
 
@@ -341,7 +370,7 @@ while True:
         print("Calibrate new points for checks?[y/n]:",end=" ")
         ans = str(input())
         if ans == "y" or ans == "Y":
-            ret , img = cv2.VideoCapture(camera_ip).read()
+            ret , img = read_camera_frame()
             img =   cv2.resize(img,(800,800))
             img = get_warp_img(img,dir_path,img_resize)
             # Chessboard square size
@@ -396,7 +425,7 @@ while True:
     ans = str(input())
     if ans == 'y' or ans == "Y":
         # show boxes
-        ret , img = cv2.VideoCapture(camera_ip).read()
+        ret , img = read_camera_frame()
         img =   cv2.resize(img,(800,800))
         img = get_warp_img(img,dir_path,img_resize)
         img_box = img.copy()
@@ -422,19 +451,17 @@ while True:
         print("Load Past Game?[y/n]:",end=" ")
         ans = str(input())
         if ans == "y" or ans == "Y":
-            chess_board = np.load(dir_path+'/fen_line_board.npz')['chess_board']
-            player_bool_position = np.load(dir_path+'/fen_line_board.npz')['player_bool_position']
-            white_turn = np.load(dir_path+'/fen_line_board.npz')['white_turn']
-            last_move = np.load(dir_path+'/fen_line_board.npz')['last_move']
-            fen_line = board2fen(chess_board)
-            board = chess.Board(fen=fen_line)
-            
-            if white_turn == 1:
-                board.turn = True
-            else:
-                board.turn = False
+            with np.load(dir_path+'/fen_line_board.npz', allow_pickle=False) as saved:
+                if 'fen' not in saved.files:
+                    raise RuntimeError(
+                        "Old save has no full FEN: castling and en passant rights "
+                        "cannot be restored safely. Start a new game."
+                    )
+                board = chess.Board(str(saved['fen'].item()))
+                last_move = str(saved['last_move'].item())
+            chess_board, player_bool_position = fen2board(board.fen())
 
-            ret,img = cv2.VideoCapture(camera_ip).read()
+            ret,img = read_camera_frame()
             img = cv2.resize(img,(800,800))
             img = get_warp_img(img,dir_path,img_resize)
             img_box = img.copy()
@@ -452,7 +479,13 @@ while True:
             break
         elif ans == "n" or ans == "N":
             chess_board,player_bool_position = fen2board(board.fen())
-            np.savez(dir_path+"/fen_line_board.npz",chess_board=chess_board,player_bool_position=player_bool_position)
+            np.savez(
+                dir_path+"/fen_line_board.npz",
+                chess_board=chess_board,
+                player_bool_position=player_bool_position,
+                fen=board.fen(),
+                last_move="",
+            )
             print("Loaded succesfully")
             break
         else:
@@ -460,48 +493,40 @@ while True:
 ###################################################################################
 ## Arm setup
 ###################################################################################
+main_checkboard_coord_start = list(checkboard_coord_start)
+main_checkboard_coord_end = list(checkboard_coord_end)
 if robotExists:
     # Connect to the robot
     robot = Robot(robot_ip)
-    count=0
-    
-    #check if the upper left coordinate in config.py is null. If it is, setup is initiated
-    for x in checkboard_coord_start:
-        if x == 0:
-            count += 1
-    
-    if count == len(checkboard_coord_start):
+    # An all-zero pose means calibration has not been saved. Check each pose
+    # independently; sharing the old counter skipped the second calibration.
+    if all(float(value) == 0.0 for value in checkboard_coord_start):
         print("Move the arm to the upper left corner while grabbing the highest piece, then press q")
         while True:
             if cv2.waitKey(1) == ord('q'):
                 break
         main_checkboard_coord_start = robot.getl()
     else:
-        main_checkboard_coord_start = checkboard_coord_start
+        main_checkboard_coord_start = list(checkboard_coord_start)
 
-    #check if the bottom left coordinate in config.py is null. If it is, setup is initiated
-    for x in checkboard_coord_end:
-        if x == 0:
-            count += 1
-    
-    if count == len(checkboard_coord_end):
-        print("Move the arm to the bottom left corner while grabbing the highest piece, then press q")
+    if all(float(value) == 0.0 for value in checkboard_coord_end):
+        print("Move the arm to the lower right corner while grabbing the highest piece, then press q")
         while True:
             if cv2.waitKey(1) == ord('q'):
                 break
         main_checkboard_coord_end = robot.getl()
     else:
-        main_checkboard_coord_end = checkboard_coord_end
+        main_checkboard_coord_end = list(checkboard_coord_end)
 ###################################################################################
 ## Start Game
 ###################################################################################
 
-while 1:
+while not board.is_game_over(claim_draw=True):
 
     ## white turn 
     print("turn:", board.turn)
     if board.turn and board.is_checkmate() == False:
-        ret , img = cv2.VideoCapture(camera_ip).read()
+        ret , img = read_camera_frame()
         img =   cv2.resize(img,(800,800))
         img = get_warp_img(img,dir_path,img_resize)
         chess_board,player_bool_position = fen2board(board.fen())
@@ -522,8 +547,12 @@ while 1:
         
         show_game(draw_img,board,last_move)
 
-        board.push(result.move)
-        last_move = str(result.move)
+        is_castling = board.is_castling(result.move)
+        capture_square = result.move.to_square
+        if board.is_en_passant(result.move):
+            capture_square += -8 if board.turn == chess.WHITE else 8
+        capture_square_name = chess.square_name(capture_square)
+        capture_box_coordinate = map_position[capture_square_name]
         
         if debug:
             print(box_1_coordinate)
@@ -531,21 +560,29 @@ while 1:
             print(chess_board)
 
         piece = chess_board[box_1_coordinate[0], box_1_coordinate[1]]
-        eaten_piece = chess_board[box_2_coordinate[0],box_2_coordinate[1]]
+        eaten_piece = chess_board[
+            capture_box_coordinate[0], capture_box_coordinate[1]
+        ]
         
-        if eaten_piece !=1:     #get rid of eaten piece
-            
-            initial_position, target_position = calculatePosition(eaten_piece, box_1_coordinate, box_2_coordinate)
-            initial_position = target_position
-            eaten_piece_height = getPieceHeight(eaten_piece)
-            eaten_position[2] = eaten_position[2] - (highest_piece - eaten_piece_height)
-            target_position = eaten_position
+        if str(eaten_piece) != "1":     # Move the captured piece to the configured tray.
+            captured_position, _ = calculatePosition(
+                eaten_piece,
+                main_checkboard_coord_start,
+                main_checkboard_coord_end,
+                capture_box_coordinate,
+                capture_box_coordinate,
+            )
+            target_position = [float(value) for value in eaten_position]
+            target_position.extend(main_checkboard_coord_start[3:6])
 
-            print("initial_position:",initial_position, "target_position:",target_position)
-        
             if robotExists:
-                print('Arm is connected, moving selected piece...')
-                # movePiece(robot, initial_position, target_position)
+                if target_position[:3] == [0.0, 0.0, 0.0]:
+                    raise RuntimeError(
+                        "Configura eaten_position in config.py prima di giocare "
+                        "con il braccio attivo."
+                    )
+                print('Arm is connected, moving captured piece...')
+                movePiece(robot, captured_position, target_position)
             
         print("piece:",piece, "box_1_coordinate:",box_1_coordinate, "box_2_coordinate:",box_2_coordinate)
         initial_position, target_position = calculatePosition(piece, main_checkboard_coord_start, main_checkboard_coord_end, box_1_coordinate, box_2_coordinate)
@@ -554,142 +591,109 @@ while 1:
         if robotExists:
             print('Arm is connected, moving selected piece...')
             movePiece(robot, initial_position, target_position)
+            if is_castling:
+                # The board state includes both castling pieces, so move the
+                # rook physically after the king.
+                rank = "1" if result.move.from_square < 8 else "8"
+                king_target_file = chess.square_file(result.move.to_square)
+                rook_from = ("h" if king_target_file == 6 else "a") + rank
+                rook_to = ("f" if king_target_file == 6 else "d") + rank
+                rook_piece = chess_board[
+                    map_position[rook_from][0], map_position[rook_from][1]
+                ]
+                rook_start, rook_end = calculatePosition(
+                    rook_piece,
+                    main_checkboard_coord_start,
+                    main_checkboard_coord_end,
+                    map_position[rook_from],
+                    map_position[rook_to],
+                )
+                movePiece(robot, rook_start, rook_end)
+            if result.move.promotion:
+                promoted = chess.piece_symbol(result.move.promotion).upper()
+                print(f"Replace the pawn on {position2} with {promoted}, then press 'p'.")
+                while cv2.waitKey(1) != ord('p'):
+                    pass
         
-        print("Press 'w' when you moved")
-        while True:
-            if cv2.waitKey(1) == ord('w'):
-                break
+        if not robotExists:
+            print("Press 'w' after moving the piece manually")
+            while True:
+                if cv2.waitKey(1) == ord('w'):
+                    break
+        # Advance the digital board only after the physical move is complete.
+        board.push(result.move)
+        last_move = result.move.uci()
         chess_board,player_bool_position = fen2board(board.fen())
         
-        np.savez(dir_path+"/fen_line_board.npz",chess_board=chess_board,player_bool_position=player_bool_position,white_turn=0,last_move=last_move)
+        np.savez(dir_path+"/fen_line_board.npz",chess_board=chess_board,player_bool_position=player_bool_position,fen=board.fen(),last_move=last_move)
 
     ## black turn
-    flag = 0
-    print("turn:", board.turn)
-    if board.turn == False and board.is_checkmate() == False:
-        chess_board,bool_position = fen2board(board.fen())
+    if not board.turn and not board.is_game_over(claim_draw=True):
+        while not board.turn:
+            ret, img_1 = read_camera_frame()
+            img_1 = cv2.resize(img_1, (800, 800))
+            img_1 = get_warp_img(img_1, dir_path, img_resize)
+            if img_1 is None:
+                raise RuntimeError("Camera calibration could not warp the board.")
+            show_game(img_1, board, last_move)
 
-        ##show chessboard image
-        ret , img_1 = cv2.VideoCapture(camera_ip).read()
-        img_1 =   cv2.resize(img_1,(800,800))
-        img_1 = get_warp_img(img_1,dir_path,img_resize)
-        show_game(img_1,board,last_move)
+            print("Black turn: finish the whole move, including the rook in castling.")
+            print("Press 'q' only when your hand has left the board.")
+            while cv2.waitKey(1) != ord('q'):
+                pass
 
-        print("Player's turn : ")
-        print("Press 'q' when you moved ")
-        
-        #capture chessboard with new black move
-        while True:
-            if cv2.waitKey(1) == ord('q'):
-                break
-        try:
-            ret , img_2 = cv2.VideoCapture(camera_ip).read()
-            img_2 =   cv2.resize(img_2,(800,800))
-            img_2 = get_warp_img(img_2,dir_path,img_resize)
-        except:
-            print("Connection to camera failed, retying...")
             while True:
-                if cv2.VideoCapture(camera_ip).read() != 0:
-                    ret , img_2 = cv2.VideoCapture(camera_ip).read()
-                    img_2 =   cv2.resize(img_2,(800,800))
-                    img_2 = get_warp_img(img_2,dir_path,img_resize)
+                try:
+                    ret, img_2 = read_camera_frame()
                     break
-        
-        #find what move has been executed by black
-        try:
-            move_word,game_img,flag = find_current_past_position(img_1,img_2,boxes,bool_position,board.fen(),chess_board,number_to_position_map,map_position)
-        except:
-            # no new move has been detected
-            print('no new move has been detected')
-            set_legal_positions(img_2,board,boxes)
-        
-        if flag:
-            move = chess.Move.from_uci(str(move_word))
-            print("move:", move)
-            print("board:\n", board)
-            if move in board.legal_moves:      
-                board.push(move)
-                last_move = str(move_word)
-                show_game(game_img,board,last_move)
-                print("Done")
-                chess_board,player_bool_position = fen2board(board.fen())
-                np.savez(dir_path+"/fen_line_board.npz",chess_board=chess_board,player_bool_position=player_bool_position,white_turn=1,last_move=last_move)
-            else:
-                # not a legal move
-                print('Not a legal move')
-                
-                #reset to make castling work on next turn (unsure why)
-                chess_board = np.load(dir_path+'/fen_line_board.npz')['chess_board']
-                player_bool_position = np.load(dir_path+'/fen_line_board.npz')['player_bool_position']
-                white_turn = np.load(dir_path+'/fen_line_board.npz')['white_turn']
-                last_move = np.load(dir_path+'/fen_line_board.npz')['last_move']
-                fen_line = board2fen(chess_board)
-                board = chess.Board(fen=fen_line)
-                board.turn = False
-                set_legal_positions(img_2,board,boxes)
-                
-                #turn: False
-                #Player's turn : 
-                #Press 'q' when you moved
-                #move: e8g8
-                #board:
-                # r n b q k . . r
-                #p p p p b p p p
-                #. . . . p . . B
-                #. . . . . . . .
-                #. . . P P . . .
-                #. . . . . N . .
-                #P P P . . P P P
-                #R N . Q K B . R
-                #Not a legal move
-                #Press 's' after your move
-                #
-                #turn: False
-                #turn: False
-                #Player's turn : 
-                #Press 'q' when you moved
-                #move: e8g8
-                #board:
-                # r n b q k . . r
-                #p p p p b p p p
-                #. . . . p . . B
-                #. . . . . . . .
-                #. . . P P . . .
-                #. . . . . N . .
-                #P P P . . P P P
-                #R N . Q K B . R
-                #Done
-                #press q after castling...
-                
-        else:
+                except RuntimeError as error:
+                    print(f"Camera read failed: {error}; retrying...")
+                    time.sleep(0.5)
+            img_2 = cv2.resize(img_2, (800, 800))
+            img_2 = get_warp_img(img_2, dir_path, img_resize)
+            if img_2 is None:
+                print("Camera calibration failed. Restore the view and retry.")
+                continue
+
             try:
-                show_game(game_img,board,last_move)
-            except:
-                #turn is 0
-                print('zero-dimensional arrays cannot be concatenated')
-        try:
-            if move_word=='e8c8' or move_word=='e8g8':
-                move_was_castling += 1
-                if move_was_castling == 2:
-                    move_was_castling = 0
-                    print('press q after castling...')
-                    
-                    #acts as debounce
-                    while True:                         
-                        key = cv2.waitKey(1) & 0xFF     
-                        if  key != ord("q"):         
-                                break
-                    #wait for castle to be executed
-                    while True:
-                        if cv2.waitKey(1) == ord('q'):
-                            break
-        except:
-            #move_word is not defined
-            print('move word not defined')
-   
+                candidates = infer_human_move(img_1, img_2, boxes, board)
+            except MoveDetectionError as error:
+                print(f"Move not accepted: {error}")
+                print("Restore the previous board position, then press 's'.")
+                set_legal_positions(img_2, board, boxes)
+                continue
+
+            if len(candidates) == 1:
+                move = candidates[0]
+            else:
+                # The same image results from Q/R/B/N promotion. Ask the player.
+                while True:
+                    choice = input("Promotion piece on the physical board (q/r/b/n): ").strip().lower()
+                    selected = [
+                        candidate for candidate in candidates
+                        if chess.piece_symbol(candidate.promotion) == choice
+                    ]
+                    if selected:
+                        move = selected[0]
+                        break
+                    print("Choose q, r, b or n matching the piece on the board.")
+
+            board.push(move)
+            last_move = move.uci()
+            show_game(img_2, board, last_move)
+            chess_board, player_bool_position = fen2board(board.fen())
+            np.savez(
+                dir_path + "/fen_line_board.npz",
+                chess_board=chess_board,
+                player_bool_position=player_bool_position,
+                fen=board.fen(),
+                last_move=last_move,
+            )
+            print(f"Accepted move: {last_move}")
+
     if board.is_checkmate():
         print("Checkmate!")
-        ret , img = cv2.VideoCapture(camera_ip).read()
+        ret , img = read_camera_frame()
         img_1 =   cv2.resize(img,(800,800))
         game_img = get_warp_img(img_1,dir_path,img_resize)
         show_game(game_img,board,last_move)
