@@ -5,7 +5,9 @@ Set CHESS_ROBOT_ENABLED=1 only when the robot is ready for remote motion.
 """
 import os
 
-camera_ip = os.getenv("CHESS_CAMERA_URL", "http://192.168.1.43:8080/video")
+# IP Webcam on the current phone. DHCP may change this address; override it
+# with CHESS_CAMERA_URL when the app shows a different URL.
+camera_ip = os.getenv("CHESS_CAMERA_URL", "http://192.168.22.119:8080/video")
 robot_ip = os.getenv("UR_ROBOT_IP", "192.168.1.100")
 
 # Remote robot movement is disabled until explicitly enabled by the operator.

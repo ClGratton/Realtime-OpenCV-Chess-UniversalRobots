@@ -1,0 +1,580 @@
+"""Browser-based live chess camera diagnostics. Never connects to the robot.
+
+Run with ``python vision_dashboard.py`` and open http://127.0.0.1:8765/.
+The camera and board views come from the same captured frame. The suggested
+move is Stockfish analysis of the displayed FEN, not a robot command.
+"""
+
+import argparse
+from collections import deque
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import json
+import os
+os.environ.setdefault("OPENCV_FFMPEG_LOGLEVEL", "16")
+from pathlib import Path
+import shutil
+import threading
+import time
+
+import chess
+import chess.engine
+import cv2
+import numpy as np
+
+from config import camera_ip
+from image_methods.board_tracker import BoardTracker, BoardTrackingError
+from image_methods.detect_points import _ordered_corners, detect_board_corners, orient_corners
+from image_methods.find_position_black import MoveDetectionError, infer_human_move
+
+
+ROOT = Path(__file__).resolve().parent
+SIZE = 800
+BOXES = np.array(
+    [[[col * 100, row * 100, (col + 1) * 100, (row + 1) * 100]
+      for col in range(8)] for row in range(8)], dtype=np.int32,
+)
+
+
+def stockfish_path():
+    choices = (
+        os.getenv("STOCKFISH_PATH"),
+        shutil.which("stockfish"),
+        shutil.which("stockfish.exe"),
+        str(ROOT.parents[2] / ".deps" / "bin" / "stockfish.exe"),
+    )
+    return next((str(path) for path in choices if path and Path(path).is_file()), None)
+
+
+def changed_square_scores(before, after):
+    """The same central-square threshold used by move detection, for display."""
+    gray_before = cv2.GaussianBlur(cv2.cvtColor(before, cv2.COLOR_BGR2GRAY), (5, 5), 0)
+    gray_after = cv2.GaussianBlur(cv2.cvtColor(after, cv2.COLOR_BGR2GRAY), (5, 5), 0)
+    delta = cv2.absdiff(gray_before, gray_after)
+    scores = np.zeros((8, 8), dtype=np.float32)
+    for row in range(8):
+        for col in range(8):
+            tile = delta[row * 100 + 12:(row + 1) * 100 - 12,
+                         col * 100 + 12:(col + 1) * 100 - 12]
+            scores[row, col] = float(np.mean(tile > 18))
+    background = float(np.median(scores))
+    threshold = max(0.035, background + 0.025)
+    changed = [chess.square(col, 7 - row) for row in range(8)
+               for col in range(8) if scores[row, col] >= threshold]
+    return scores, background, changed
+
+
+def draw_arrow(image, move, color):
+    if not move:
+        return
+    a = (chess.square_file(move.from_square) * 100 + 50,
+         (7 - chess.square_rank(move.from_square)) * 100 + 50)
+    b = (chess.square_file(move.to_square) * 100 + 50,
+         (7 - chess.square_rank(move.to_square)) * 100 + 50)
+    cv2.arrowedLine(image, a, b, color, 7, cv2.LINE_AA, tipLength=0.2)
+
+
+class BoardViewFilter:
+    """Light display-only filtering after geometric board stabilization."""
+
+    def __init__(self):
+        self.frames = deque(maxlen=3)
+        self.clahe = cv2.createCLAHE(clipLimit=1.5, tileGridSize=(8, 8))
+
+    def reset(self):
+        self.frames.clear()
+
+    def process(self, warped):
+        self.frames.append(warped.copy())
+        if len(self.frames) == 3:
+            a, b, c = self.frames
+            # Median of three rejects isolated JPEG noise without the long
+            # trails of a four-frame arithmetic average.
+            stable = np.maximum(np.minimum(a, b), np.minimum(np.maximum(a, b), c))
+        else:
+            stable = warped
+        lab = cv2.cvtColor(stable, cv2.COLOR_BGR2LAB)
+        luminance, channel_a, channel_b = cv2.split(lab)
+        improved = self.clahe.apply(luminance)
+        lab = cv2.merge((cv2.addWeighted(luminance, 0.55, improved, 0.45, 0),
+                         channel_a, channel_b))
+        return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+
+
+class VisionDashboard:
+    def __init__(self, url):
+        self.url = url
+        self.lock = threading.RLock()
+        self.condition = threading.Condition(self.lock)
+        self.commands = deque()
+        self.tracker = BoardTracker((SIZE, SIZE))
+        self.orientation = 3  # Current BOOX view: image corner 4 is presumed a8.
+        self.orientation_confirmed = False
+        self.tracking_paused = False
+        self.recovery_started = None
+        self.next_recovery_at = None
+        self.settle_until = 0.0
+        self.baseline = None
+        self.latest_warp = None
+        self.latest_board_view = None
+        self.view_filter = BoardViewFilter()
+        self.board = chess.Board()
+        self.candidate = None
+        self.candidate_seen = 0
+        self.last_candidate = None
+        self.planned_move = None
+        self.engine_name = "Avvio..."
+        self.engine_error = None
+        self.frame_number = 0
+        self.raw_jpeg = None
+        self.board_jpeg = None
+        self.last_frame_at = 0.0
+        self.last_frame_interval = None
+        self.status = "Avvio camera"
+        self.detail = "In attesa del primo fotogramma"
+        self.changed = []
+        self.highlighted = []
+        self.background = 0.0
+        self.last_move = None
+        self.engine_event = threading.Event()
+        self.stop_event = threading.Event()
+        self.engine_event.set()
+
+    def start(self):
+        threading.Thread(target=self._camera_loop, name="camera", daemon=True).start()
+        threading.Thread(target=self._engine_loop, name="stockfish", daemon=True).start()
+
+    def command(self, payload):
+        with self.lock:
+            self.commands.append(payload)
+        return {"ok": True}
+
+    def snapshot(self):
+        with self.lock:
+            board = self.board.copy()
+            proposed = self.planned_move
+            candidate = self.candidate
+            age = round(time.monotonic() - self.last_frame_at, 1) if self.last_frame_at else None
+            return {
+                "camera_url": self.url,
+                "status": self.status,
+                "detail": self.detail,
+                "frame": self.frame_number,
+                "age_seconds": age,
+                "fps": round(1 / self.last_frame_interval, 1) if self.last_frame_interval else 0,
+                "tracked": self.tracker.corners is not None and not self.tracking_paused,
+                "recovering": self.tracking_paused and self.recovery_started is not None
+                              and time.monotonic() - self.recovery_started < 60,
+                "orientation": self.orientation + 1,
+                "orientation_confirmed": self.orientation_confirmed,
+                "reference_ready": self.baseline is not None,
+                "changed_squares": [chess.square_name(sq) for sq in self.changed],
+                "background_change": round(self.background, 3),
+                "candidate_uci": candidate.uci() if candidate else None,
+                "candidate_san": board.san(candidate) if candidate and candidate in board.legal_moves else None,
+                "planned_uci": proposed.uci() if proposed else None,
+                "planned_san": board.san(proposed) if proposed and proposed in board.legal_moves else None,
+                "engine_name": self.engine_name,
+                "engine_error": self.engine_error,
+                "fen": board.fen(),
+                "turn": "Bianco" if board.turn else "Nero",
+                "last_move": self.last_move,
+                "robot": "Disabilitato: sola visione",
+            }
+
+    def _apply_commands(self, image):
+        with self.lock:
+            commands = list(self.commands)
+            self.commands.clear()
+        for payload in commands:
+            kind = payload.get("action")
+            try:
+                if kind == "orientation":
+                    index = int(payload["corner"]) - 1
+                    if index not in range(4):
+                        raise ValueError("L'angolo a8 deve essere 1, 2, 3 o 4")
+                    self.orientation = index
+                    self.orientation_confirmed = True
+                    self._relock(image)
+                elif kind == "relock":
+                    self._relock(image)
+                elif kind == "reference":
+                    if self.latest_warp is None or self.tracking_paused:
+                        raise ValueError("Scacchiera non agganciata")
+                    self.baseline = self.latest_warp.copy()
+                    self._clear_candidate()
+                    self.detail = "Nuovo fotogramma di riferimento acquisito"
+                elif kind == "new_game":
+                    self.board = chess.Board()
+                    self.last_move = None
+                    self.baseline = self.latest_warp.copy() if self.latest_warp is not None else None
+                    self._clear_candidate()
+                    self._invalidate_engine()
+                elif kind == "fen":
+                    board = chess.Board(str(payload["fen"]).strip())
+                    if not board.is_valid():
+                        raise ValueError("Posizione FEN non valida")
+                    self.board = board
+                    self.last_move = None
+                    self.baseline = self.latest_warp.copy() if self.latest_warp is not None else None
+                    self._clear_candidate()
+                    self._invalidate_engine()
+                elif kind == "confirm_candidate":
+                    if self.candidate is None or self.candidate not in self.board.legal_moves:
+                        raise ValueError("Non c'è una mossa riconosciuta da confermare")
+                    self._push_move(self.candidate)
+                elif kind == "confirm_engine":
+                    if self.planned_move is None or self.planned_move not in self.board.legal_moves:
+                        raise ValueError("Non c'è una mossa Stockfish da confermare")
+                    self._push_move(self.planned_move)
+                else:
+                    raise ValueError("Azione sconosciuta")
+            except (ValueError, BoardTrackingError) as error:
+                self.detail = f"Azione rifiutata: {error}"
+
+    def _push_move(self, move):
+        self.last_move = self.board.san(move)
+        self.board.push(move)
+        self.baseline = self.latest_warp.copy() if self.latest_warp is not None else None
+        self._clear_candidate()
+        self._invalidate_engine()
+        self.detail = f"Mossa confermata: {self.last_move}"
+
+    def _invalidate_engine(self):
+        with self.lock:
+            self.planned_move = None
+        self.engine_event.set()
+
+    def _clear_candidate(self):
+        self.candidate = None
+        self.last_candidate = None
+        self.candidate_seen = 0
+        self.changed = []
+        self.highlighted = []
+        self.background = 0.0
+
+    def _relock(self, image):
+        corners = detect_board_corners(image)
+        if corners is None:
+            raise ValueError("I 49 incroci della scacchiera non sono visibili")
+        oriented = orient_corners(corners, self.orientation)
+        self.latest_warp = self.tracker.initialize(image, oriented)
+        self.view_filter.reset()
+        self.latest_board_view = None
+        self.tracking_paused = False
+        self.recovery_started = None
+        self.next_recovery_at = None
+        # E-ink refresh can leave a partially drawn board for a moment. Keep
+        # updating the reference during this short settling period.
+        self.settle_until = time.monotonic() + 2.0
+        self.baseline = self.latest_warp.copy()
+        self._clear_candidate()
+        self.status = "Scacchiera agganciata"
+        self.detail = "Angoli rilevati automaticamente; riferimento aggiornato"
+
+    def _engine_loop(self):
+        path = stockfish_path()
+        if path is None:
+            with self.lock:
+                self.engine_name = "Stockfish assente"
+                self.engine_error = "Imposta STOCKFISH_PATH per vedere la mossa del motore"
+            return
+        try:
+            with chess.engine.SimpleEngine.popen_uci(path) as engine:
+                with self.lock:
+                    self.engine_name = engine.id.get("name", "Stockfish")
+                    self.engine_error = None
+                while not self.stop_event.is_set():
+                    self.engine_event.wait(0.5)
+                    if not self.engine_event.is_set():
+                        continue
+                    self.engine_event.clear()
+                    with self.lock:
+                        fen = self.board.fen()
+                    board = chess.Board(fen)
+                    if board.is_game_over(claim_draw=True):
+                        continue
+                    info = engine.analyse(board, chess.engine.Limit(time=0.25))
+                    move = info["pv"][0]
+                    with self.lock:
+                        if self.board.fen() == fen:
+                            self.planned_move = move
+        except Exception as error:
+            with self.lock:
+                self.engine_error = str(error)
+                self.engine_name = "Stockfish non disponibile"
+
+    def _camera_loop(self):
+        while not self.stop_event.is_set():
+            camera = cv2.VideoCapture(self.url)
+            if not camera.isOpened():
+                with self.lock:
+                    self.status = "Camera scollegata"
+                    self.detail = "Tentativo di riconnessione..."
+                camera.release()
+                time.sleep(1)
+                continue
+            camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            try:
+                while not self.stop_event.is_set():
+                    ok, raw = camera.read()
+                    if not ok or raw is None:
+                        raise RuntimeError("Il flusso video si è interrotto")
+                    image = cv2.resize(raw, (SIZE, SIZE))
+                    with self.lock:
+                        self._apply_commands(image)
+                        self._process_frame(raw, image)
+            except Exception as error:
+                with self.lock:
+                    self.status = "Camera da riconnettere"
+                    self.detail = str(error)
+                time.sleep(0.5)
+            finally:
+                camera.release()
+
+    def _process_frame(self, raw, image):
+        now = time.monotonic()
+        if self.last_frame_at:
+            elapsed = now - self.last_frame_at
+            self.last_frame_interval = elapsed if self.last_frame_interval is None else (0.8 * self.last_frame_interval + 0.2 * elapsed)
+        self.last_frame_at = now
+        self.frame_number += 1
+
+        if self.tracker.corners is None:
+            try:
+                self._relock(image)
+            except (ValueError, BoardTrackingError) as error:
+                self.status = "Scacchiera non trovata"
+                self.detail = str(error)
+        elif self.tracking_paused:
+            if self.recovery_started is not None and now - self.recovery_started < 60:
+                if now >= self.next_recovery_at:
+                    self.next_recovery_at = now + 5.0
+                    try:
+                        self._relock(image)
+                        self.detail = "Scacchiera ritrovata; attendo che il BOOX finisca il refresh"
+                    except (ValueError, BoardTrackingError) as error:
+                        self.status = "Recupero automatico"
+                        self.detail = f"Scacchiera ancora instabile ({error}); nuovo tentativo tra 5 s"
+                else:
+                    wait = max(0, round(self.next_recovery_at - now))
+                    self.status = "Recupero automatico"
+                    self.detail = f"Refresh o cambio pagina: riprovo tra {wait} s, fino a 60 s"
+            else:
+                self.status = "Rilocca la scacchiera"
+                self.detail = "60 s di tentativi conclusi; stabilizza il BOOX e premi Riloca"
+        else:
+            try:
+                self.latest_warp = self.tracker.update(image)
+                self.status = "Scacchiera agganciata"
+            except BoardTrackingError as error:
+                self.tracking_paused = True
+                self.recovery_started = now
+                self.next_recovery_at = now + 5.0
+                self._clear_candidate()
+                self.status = "Recupero automatico"
+                self.detail = f"{error} Attendo il refresh; primo tentativo tra 5 s"
+
+        if self.latest_warp is not None and not self.tracking_paused:
+            self._analyze_move(self.latest_warp)
+            self.latest_board_view = self.view_filter.process(self.latest_warp)
+
+        raw_display = self._draw_raw(raw)
+        board_display = self._draw_board()
+        self.raw_jpeg = cv2.imencode(".jpg", raw_display, [cv2.IMWRITE_JPEG_QUALITY, 80])[1].tobytes()
+        self.board_jpeg = cv2.imencode(".jpg", board_display, [cv2.IMWRITE_JPEG_QUALITY, 86])[1].tobytes()
+        self.condition.notify_all()
+
+    def _analyze_move(self, warped):
+        if time.monotonic() < self.settle_until:
+            self.baseline = warped.copy()
+            self._clear_candidate()
+            self.background = 0.0
+            self.detail = "Il BOOX si sta stabilizzando; il riferimento viene aggiornato"
+            return
+        if self.baseline is None:
+            self.baseline = warped.copy()
+            return
+        scores, background, changed = changed_square_scores(self.baseline, warped)
+        self.background = background
+        # A single legal move changes 2-4 squares. E-ink full-page updates can
+        # alter many occupied squares at once; never paint those as a move.
+        self.changed = changed if background <= 0.08 and len(changed) <= 4 else []
+        self.highlighted = []
+        if not self.orientation_confirmed:
+            self.detail = "Conferma quale angolo della camera è a8 per leggere le mosse"
+            self._clear_candidate()
+            return
+        if background > 0.08:
+            self.detail = "Molte caselle sono cambiate: attendi il refresh dello schermo"
+            self.candidate = None
+            self.last_candidate = None
+            self.candidate_seen = 0
+            return
+        if not 2 <= len(changed) <= 4:
+            self.detail = "In attesa di una mossa completa" if len(changed) < 2 else "Aggiornamento esteso: caselle non evidenziate; usa Nuovo riferimento se la posizione è corretta"
+            self.candidate = None
+            self.last_candidate = None
+            self.candidate_seen = 0
+            return
+        try:
+            options = infer_human_move(self.baseline, warped, BOXES, self.board)
+            if len(options) != 1:
+                raise MoveDetectionError("Promozione: scegli il pezzo prima di confermare")
+            move = options[0]
+            self.candidate_seen = self.candidate_seen + 1 if move == self.last_candidate else 1
+            self.last_candidate = move
+            self.candidate = move if self.candidate_seen >= 5 else None
+            self.highlighted = changed if self.candidate else []
+            self.detail = "Mossa legale da confermare" if self.candidate else "Verifica stabilità della mossa..."
+        except MoveDetectionError as error:
+            self.candidate = None
+            self.last_candidate = None
+            self.candidate_seen = 0
+            self.detail = str(error)
+
+    def _draw_raw(self, raw):
+        height, width = raw.shape[:2]
+        scale = min(1.0, 1280 / width)
+        display = cv2.resize(raw, (round(width * scale), round(height * scale)))
+        if self.tracker.corners is not None:
+            corners = _ordered_corners(self.tracker.corners)
+            x_factor = display.shape[1] / SIZE
+            y_factor = display.shape[0] / SIZE
+            points = np.array([[x * x_factor, y * y_factor] for x, y in corners], dtype=np.int32)
+            cv2.polylines(display, [points], True, (42, 210, 122) if not self.tracking_paused else (0, 80, 245), 3)
+            for index, (x, y) in enumerate(points):
+                active = index == self.orientation
+                cv2.circle(display, (int(x), int(y)), 13, (15, 215, 245) if active else (255, 255, 255), -1)
+                cv2.putText(display, str(index + 1), (int(x) - 6, int(y) + 6),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (20, 25, 35), 2)
+        label = "CAMERA LIVE" if not self.tracking_paused else "ANALISI IN PAUSA"
+        cv2.rectangle(display, (12, 12), (380, 64), (22, 29, 45), -1)
+        cv2.putText(display, label, (27, 49), cv2.FONT_HERSHEY_SIMPLEX, 0.9,
+                    (255, 255, 255), 2, cv2.LINE_AA)
+        return display
+
+    def _draw_board(self):
+        if self.latest_warp is None:
+            image = np.full((SIZE, SIZE, 3), (26, 33, 46), dtype=np.uint8)
+            cv2.putText(image, "ATTESA SCACCHIERA", (100, 400),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            return image
+        image = self.latest_board_view.copy() if self.latest_board_view is not None else self.latest_warp.copy()
+        overlay = image.copy()
+        for sq in self.highlighted:
+            col = chess.square_file(sq)
+            row = 7 - chess.square_rank(sq)
+            cv2.rectangle(overlay, (col * 100, row * 100), ((col + 1) * 100, (row + 1) * 100),
+                          (30, 170, 255), -1)
+        image = cv2.addWeighted(overlay, 0.25, image, 0.75, 0)
+        for i in range(9):
+            cv2.line(image, (i * 100, 0), (i * 100, 799), (42, 215, 135), 2)
+            cv2.line(image, (0, i * 100), (799, i * 100), (42, 215, 135), 2)
+        if self.orientation_confirmed:
+            for row in range(8):
+                for col in range(8):
+                    cv2.putText(image, f"{chr(97 + col)}{8 - row}",
+                                (col * 100 + 8, row * 100 + 22),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (10, 135, 70), 2)
+            draw_arrow(image, self.planned_move, (245, 190, 30))
+            draw_arrow(image, self.candidate, (60, 225, 95))
+        if self.tracking_paused:
+            cv2.rectangle(image, (0, 0), (799, 80), (20, 28, 190), -1)
+            cv2.putText(image, "TRACKING IN PAUSA", (105, 52),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 3)
+        return image
+
+
+def make_handler(dashboard):
+    html = (ROOT / "vision_dashboard.html").read_bytes()
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, format_string, *args):
+            if not self.path.startswith(("/stream/", "/api/state", "/frame/")):
+                super().log_message(format_string, *args)
+
+        def do_GET(self):
+            path = self.path.split("?", 1)[0]
+            if path == "/":
+                self._send(200, "text/html; charset=utf-8", html)
+            elif path == "/api/state":
+                self._send(200, "application/json", json.dumps(dashboard.snapshot()).encode())
+            elif path == "/frame/raw.jpg" or path == "/frame/board.jpg":
+                with dashboard.lock:
+                    data = dashboard.raw_jpeg if "raw" in path else dashboard.board_jpeg
+                if data is None:
+                    self._send(503, "text/plain", b"Waiting for camera")
+                else:
+                    self._send(200, "image/jpeg", data)
+            elif path in ("/stream/raw", "/stream/board"):
+                self._stream("raw" if path.endswith("raw") else "board")
+            else:
+                self._send(404, "text/plain", b"Not found")
+
+        def do_POST(self):
+            if self.path != "/api/action":
+                self._send(404, "text/plain", b"Not found")
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if not 0 < length < 4096:
+                    raise ValueError("Invalid body length")
+                payload = json.loads(self.rfile.read(length))
+                self._send(200, "application/json", json.dumps(dashboard.command(payload)).encode())
+            except (ValueError, json.JSONDecodeError) as error:
+                self._send(400, "text/plain", str(error).encode())
+
+        def _send(self, status, content_type, body):
+            self.send_response(status)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _stream(self, which):
+            self.send_response(200)
+            self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=frame")
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            seen = -1
+            try:
+                while not dashboard.stop_event.is_set():
+                    with dashboard.condition:
+                        dashboard.condition.wait_for(
+                            lambda: dashboard.frame_number != seen or dashboard.stop_event.is_set(), 5
+                        )
+                        seen = dashboard.frame_number
+                        data = dashboard.raw_jpeg if which == "raw" else dashboard.board_jpeg
+                    if data is None:
+                        continue
+                    self.wfile.write(b"--frame\r\nContent-Type: image/jpeg\r\nContent-Length: "
+                                     + str(len(data)).encode() + b"\r\n\r\n" + data + b"\r\n")
+                    self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError, OSError):
+                pass
+
+    return Handler
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--camera", default=camera_ip)
+    parser.add_argument("--port", type=int, default=8765)
+    args = parser.parse_args()
+    dashboard = VisionDashboard(args.camera)
+    server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(dashboard))
+    dashboard.start()
+    print(f"Vision dashboard: http://127.0.0.1:{args.port}/", flush=True)
+    print("Robot control: disabled", flush=True)
+    try:
+        server.serve_forever(poll_interval=0.2)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        dashboard.stop_event.set()
+        server.server_close()
+
+
+if __name__ == "__main__":
+    main()

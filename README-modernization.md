@@ -55,3 +55,32 @@ camera tracking alone does not update robot coordinates.
 
 This update targets the repository's Universal Robots + Robotiq hardware and
 uses its existing Python-URX interface. It is not a Dobot driver replacement.
+
+## Live camera display
+
+On the PC, run `pwsh -ExecutionPolicy Bypass -File .\start_vision_dashboard.ps1`
+from the repository directory and open `http://127.0.0.1:8765/`. Start the IP
+Webcam server on the phone first. The current default stream is
+`http://192.168.22.119:8080/video`; pass `-CameraUrl 'http://PHONE_IP:8080/video'`
+if DHCP gives the phone another address. Install `requirements.txt` in Python
+if those packages are not already present. Set `STOCKFISH_PATH` to an installed
+Stockfish executable to display its suggested move.
+
+The display offers original camera and perspective-corrected views, a live
+board outline, changed squares, legal move candidates, and Stockfish analysis
+for the displayed FEN. Choose the physical a8 corner before reading moves.
+The perspective view is aligned by the board tracker, uses a rolling three
+frame median to suppress isolated video noise, and gently enhances luminance
+with CLAHE. Move detection still uses the unfiltered warped frames so the
+visual treatment does not alter its decision thresholds.
+Possible square changes remain visible as text for debugging; orange overlays
+appear only once the change matches a stable legal move.
+The move and FEN controls update this display's game state; they do not move
+the robot. The dashboard never connects to the robot.
+
+During a BOOX full-page refresh, tracking pauses and retries locating the
+board every five seconds for up to one minute. A successful relock spends two
+seconds rebuilding its visual reference while the screen settles. Broad screen
+changes are suppressed instead of highlighted as chess moves. If the board is
+still lost after one minute, stabilize the view and click `Riloca scacchiera`.
+The browser video reconnects after a temporary dashboard server interruption.

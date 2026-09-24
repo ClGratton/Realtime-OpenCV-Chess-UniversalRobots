@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scacchi · Visione live</title>
+  <style>
+    :root { color-scheme: dark; --bg: #0b1119; --panel: #14202d; --line: #294052; --text: #f2f6f5; --muted: #a6b9bd; --green: #84e3a1; --amber: #f7cb74; --blue: #6ebcf3; --red: #fc7d7d; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: radial-gradient(circle at 10% 0%, #19323c 0, var(--bg) 38%); color: var(--text); font: 16px/1.4 "Segoe UI", Inter, Arial, sans-serif; }
+    button, input { font: inherit; }
+    button { cursor: pointer; border: 1px solid var(--line); border-radius: 12px; background: #203242; color: var(--text); padding: 10px 14px; transition: background .15s, transform .15s; }
+    button:hover { background: #2c4659; }
+    button:active { transform: scale(.98); }
+    button:disabled { cursor: not-allowed; opacity: .4; }
+    button.selected { background: #2b6254; border-color: var(--green); }
+    .page { max-width: 1780px; margin: auto; padding: 22px 24px 34px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+    h1 { font-size: clamp(27px, 3vw, 43px); letter-spacing: -.04em; line-height: 1; margin: 4px 0 6px; }
+    h2 { font-size: 14px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .12em; margin: 0 0 13px; }
+    p { margin: 0; }
+    .eyebrow { color: var(--green); text-transform: uppercase; letter-spacing: .18em; font-size: 12px; font-weight: 800; }
+    .subtitle, .muted { color: var(--muted); }
+    .live-status { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 14px; background: #192935; min-width: 230px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 18px currentColor; flex: none; }
+    .dot.good { background: var(--green); color: var(--green); }
+    .dot.bad { background: var(--red); color: var(--red); }
+    .status-main { font-weight: 800; }
+    .status-sub { font-size: 12px; color: var(--muted); }
+    .layout { display: grid; grid-template-columns: minmax(560px, 1.6fr) minmax(340px, .8fr); gap: 18px; align-items: start; }
+    .stage, .card { background: rgba(20, 32, 45, .94); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 20px 45px #0003; }
+    .stage { padding: 14px; }
+    .stage-head { display: flex; gap: 12px; justify-content: space-between; align-items: center; margin: 0 0 12px; }
+    .tabs { display: flex; gap: 5px; background: #0d1821; border-radius: 12px; padding: 4px; }
+    .tabs button { border: 0; background: transparent; padding: 8px 12px; white-space: nowrap; }
+    .tabs button.selected { background: #2b6254; }
+    .counter { color: var(--muted); font-size: 13px; text-align: right; }
+    .video-wrap { display: flex; justify-content: center; align-items: center; overflow: hidden; border-radius: 12px; background: #070c10; min-height: 480px; height: min(68vh, 830px); position: relative; }
+    .video-wrap img { width: 100%; height: 100%; object-fit: contain; }
+    .video-caption { display: flex; flex-wrap: wrap; gap: 8px 22px; justify-content: space-between; color: var(--muted); font-size: 13px; padding: 11px 4px 0; }
+    .rail { display: grid; gap: 14px; }
+    .card { padding: 19px 20px; }
+    .hero { background: linear-gradient(140deg, #173b39, #172933 65%); border-color: #3b706a; }
+    .move { font-size: clamp(35px, 4.4vw, 63px); line-height: 1; letter-spacing: -.055em; font-weight: 800; color: var(--green); margin: 4px 0 8px; }
+    .move.unknown { color: var(--muted); font-size: 36px; }
+    .move-small { font-size: 35px; color: var(--amber); margin: 5px 0 8px; font-weight: 800; }
+    .tag { display: inline-block; color: var(--muted); border: 1px solid var(--line); border-radius: 50px; padding: 4px 10px; font-size: 12px; margin-top: 8px; }
+    .row { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
+    .row strong { text-align: right; overflow-wrap: anywhere; }
+    .warning { color: var(--amber); }
+    .error { color: var(--red); }
+    .controls { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 12px; }
+    .controls button { padding: 8px 11px; }
+    input { width: 100%; background: #0d1821; color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; outline: none; }
+    input:focus { border-color: var(--green); }
+    .orientation { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .orientation button { min-width: 42px; }
+    .footer { color: var(--muted); font-size: 13px; margin-top: 17px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
+    @media (max-width: 1060px) { .layout { grid-template-columns: 1fr; } .rail { grid-template-columns: repeat(2, minmax(280px, 1fr)); } .video-wrap { height: min(65vh, 740px); } }
+    @media (max-width: 700px) { .page { padding: 13px; } header { align-items: start; flex-direction: column; } .rail { grid-template-columns: 1fr; } .stage-head { flex-direction: column; align-items: stretch; } .video-wrap { min-height: 300px; height: 52vh; } }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div><div class="eyebrow">Scuole aperte · Laboratorio di robotica</div><h1>Scacchi, vista del computer</h1><p class="subtitle">Quello che la camera vede, quello che il programma riconosce, quello che Stockfish suggerisce.</p></div>
+      <div class="live-status"><span id="dot" class="dot"></span><div><div id="status" class="status-main">Collegamento...</div><div id="age" class="status-sub">Attesa fotogramma</div></div></div>
+    </header>
+
+    <main class="layout">
+      <section class="stage">
+        <div class="stage-head">
+          <div class="tabs" aria-label="Vista video"><button id="raw-tab" onclick="setView('raw')">Telecamera originale</button><button id="board-tab" onclick="setView('board')">Prospettiva corretta</button></div>
+          <div id="counter" class="counter">Fotogramma — · — fps</div>
+        </div>
+        <div class="video-wrap"><img id="feed" alt="Video live della scacchiera dal telefono"></div>
+        <div class="video-caption"><span id="view-help">I numeri indicano i quattro angoli trovati dalla camera.</span><span id="robot">Robot: disabilitato</span></div>
+      </section>
+
+      <aside class="rail">
+        <section class="card hero">
+          <h2>Mossa proposta da Stockfish</h2>
+          <div id="planned" class="move unknown">—</div>
+          <p id="planned-detail" class="muted">Analisi della posizione corrente.</p>
+          <span id="engine" class="tag">Motore in avvio</span>
+          <div class="controls"><button id="confirm-engine" onclick="action('confirm_engine')">Segna come eseguita</button></div>
+        </section>
+
+        <section class="card">
+          <h2>Cosa vede la camera</h2>
+          <div class="row"><span>Scacchiera</span><strong id="tracked">In attesa</strong></div>
+          <div class="row"><span>Possibili cambiamenti</span><strong id="changed">Nessuno</strong></div>
+          <div class="row"><span>Movimento diffuso</span><strong id="background">0%</strong></div>
+          <p id="detail" class="muted" style="margin-top:12px">Attendo la camera...</p>
+        </section>
+
+        <section class="card">
+          <h2>Mossa letta sulla scacchiera</h2>
+          <div id="candidate" class="move-small">—</div>
+          <p class="muted">Compare dopo che le caselle cambiate corrispondono a una mossa legale stabile.</p>
+          <div class="controls"><button id="confirm-candidate" onclick="action('confirm_candidate')">Conferma mossa letta</button><button onclick="action('reference')">Nuovo riferimento</button></div>
+        </section>
+
+        <section class="card">
+          <h2>Controlli della dimostrazione</h2>
+          <p class="muted">L'angolo <strong>a8</strong> è quello in alto a sinistra per chi gioca con il Bianco in basso. Scegli il numero visto nel feed originale.</p>
+          <div class="orientation"><span>Angolo a8:</span><button class="corner" data-corner="1" onclick="chooseCorner(1)">1</button><button class="corner" data-corner="2" onclick="chooseCorner(2)">2</button><button class="corner" data-corner="3" onclick="chooseCorner(3)">3</button><button class="corner" data-corner="4" onclick="chooseCorner(4)">4</button></div>
+          <p id="orientation-note" class="warning" style="margin-top:9px">La vista attuale suggerisce l'angolo 4; confermalo prima di leggere le mosse.</p>
+          <div class="controls"><button onclick="action('relock')">Riloca scacchiera</button><button onclick="action('new_game')">Nuova partita</button><button onclick="document.documentElement.requestFullscreen()">Schermo intero</button></div>
+          <div class="row"><span>Turno</span><strong id="turn">—</strong></div>
+          <div class="row"><span>Ultima mossa confermata</span><strong id="last-move">—</strong></div>
+          <label for="fen" class="muted" style="display:block;margin-top:15px">Posizione FEN, se la partita è già iniziata</label>
+          <input id="fen" spellcheck="false" aria-label="Posizione FEN">
+          <div class="controls"><button onclick="applyFen()">Carica posizione</button></div>
+        </section>
+      </aside>
+    </main>
+    <div class="footer"><span id="source">Camera: —</span><span>Le mosse mostrate sono analisi. Nessun comando viene inviato al robot.</span></div>
+  </div>
+  <script>
+    let view = 'board';
+    let latestFen = '';
+    let serverDisconnected = false;
+    let reconnectTimer = null;
+    const $ = id => document.getElementById(id);
+
+    function restartFeed() {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+      $('feed').src = '/stream/' + view + '?t=' + Date.now();
+    }
+
+    $('feed').addEventListener('error', () => {
+      if (!reconnectTimer) reconnectTimer = setTimeout(restartFeed, 1500);
+    });
+
+    function setView(next) {
+      if (view === next && $('feed').src) return;
+      view = next;
+      restartFeed();
+      $('raw-tab').classList.toggle('selected', next === 'raw');
+      $('board-tab').classList.toggle('selected', next === 'board');
+      $('view-help').textContent = next === 'raw'
+        ? 'Contorno verde = scacchiera trovata. Il cerchio giallo è l’angolo a8 selezionato.'
+        : 'Allineamento live, mediana di 3 frame e contrasto locale. Arancione = mossa legale stabile; blu = Stockfish; verde = mossa letta.';
+    }
+
+    async function action(name, extra = {}) {
+      try {
+        const response = await fetch('/api/action', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:name, ...extra})});
+        if (!response.ok) throw new Error(await response.text());
+      } catch (error) { $('detail').textContent = 'Comando non inviato: ' + error.message; }
+    }
+    function chooseCorner(number) { action('orientation', {corner:number}); }
+    function applyFen() { action('fen', {fen:$('fen').value}); }
+
+    async function refresh() {
+      try {
+        const response = await fetch('/api/state', {cache:'no-store'});
+        if (!response.ok) throw new Error('Server non disponibile');
+        const s = await response.json();
+        if (serverDisconnected) {
+          serverDisconnected = false;
+          restartFeed();
+        }
+        $('status').textContent = s.status;
+        $('age').textContent = s.age_seconds === null ? 'Attesa fotogramma' : `Fotogramma ${s.age_seconds.toFixed(1)} s fa`;
+        $('dot').className = 'dot ' + (s.age_seconds !== null && s.age_seconds > 3 ? 'bad' : s.tracked ? 'good' : '');
+        $('counter').textContent = `Fotogramma ${s.frame} · ${s.fps.toFixed(1)} fps`;
+        $('robot').textContent = `Robot: ${s.robot}`;
+        $('tracked').textContent = s.tracked ? 'Agganciata' : 'In pausa / ricerca';
+        $('changed').textContent = s.changed_squares.length ? s.changed_squares.join(', ') : 'Nessuno';
+        $('background').textContent = `${Math.round(s.background_change * 100)}%`;
+        $('detail').textContent = s.detail;
+        $('detail').className = s.tracked ? 'muted' : 'warning';
+        $('planned').textContent = s.planned_san || '—';
+        $('planned').classList.toggle('unknown', !s.planned_san);
+        $('planned-detail').textContent = s.planned_uci ? `${s.planned_uci} · Turno ${s.turn} · analisi su FEN` : (s.engine_error || 'In attesa della mossa del motore');
+        $('engine').textContent = s.engine_name;
+        $('candidate').textContent = s.candidate_san || '—';
+        $('turn').textContent = s.turn;
+        $('last-move').textContent = s.last_move || '—';
+        $('orientation-note').textContent = s.orientation_confirmed ? `a8 confermato: angolo ${s.orientation}` : `a8 suggerito: angolo ${s.orientation}. Confermalo prima di leggere le mosse.`;
+        $('orientation-note').className = s.orientation_confirmed ? 'muted' : 'warning';
+        document.querySelectorAll('.corner').forEach(b => b.classList.toggle('selected', Number(b.dataset.corner) === s.orientation));
+        $('confirm-candidate').disabled = !s.candidate_uci;
+        $('confirm-engine').disabled = !s.planned_uci;
+        $('source').textContent = `Camera: ${s.camera_url}`;
+        if (s.fen !== latestFen) { latestFen = s.fen; $('fen').value = s.fen; }
+      } catch (error) {
+        serverDisconnected = true;
+        $('status').textContent = 'Feed scollegato';
+        $('dot').className = 'dot bad';
+        $('detail').textContent = error.message;
+      }
+    }
+    setView('board');
+    refresh();
+    setInterval(refresh, 400);
+  </script>
+</body>
+</html>

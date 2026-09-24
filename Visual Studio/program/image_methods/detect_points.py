@@ -25,6 +25,11 @@ def detect_board_corners(image, fast=False):
     if detector is not None:
         flags = 0 if fast else cv2.CALIB_CB_EXHAUSTIVE | cv2.CALIB_CB_ACCURACY
         found, corners = detector(gray, (7, 7), flags=flags)
+        if not found:
+            # E-ink chess apps draw low-contrast squares, especially after a
+            # full-page refresh. Local contrast restores the grid for SB.
+            enhanced = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(gray)
+            found, corners = detector(enhanced, (7, 7), flags=flags)
     else:
         found, corners = cv2.findChessboardCorners(
             gray,
