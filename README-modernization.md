@@ -18,8 +18,8 @@
 - Tracks the board on each live camera frame using optical flow, with periodic
   fresh chessboard detection to correct drift. Each move's before and after
   images are warped using their own current board positions.
-- Pauses and requires an explicit relock when the board leaves view, jumps,
-  changes appearance across many squares, or the two locators disagree.
+- Pauses after a refresh or a large viewpoint change and retries a relock every
+  five seconds for up to one minute.
 - Infers the human move by matching changed squares against every legal move
   in python-chess. Castling needs all four squares, en passant all three, and
   promotions require the player to choose the piece. The saved game now keeps
@@ -45,13 +45,17 @@ Robotiq gripper setup appropriate to the controller. Install the official
 Stockfish release separately and set STOCKFISH_PATH to its executable, or add
 it to PATH.
 
-The robot is disabled by default. Configure UR_ROBOT_IP, both six-value board
-calibration poses, the tray XYZ pose, and CHESS_ROBOT_ENABLED=1 only after
-checking the coordinate frame and clearances. Image corner detection calibrates
-the camera view; it does not infer robot base-frame coordinates. Two taught UR
-poses are still required for image-to-robot motion. The chessboard must stay
-fixed relative to the robot until board-to-robot tracking is added; live
-camera tracking alone does not update robot coordinates.
+The robot is disabled by default. The ⚙ panel stores the controller IP and
+the camera URL locally. The position dialog stores three six-value TCP poses
+for the centres of a8, h8 and a1, plus the capture tray XYZ, in
+`Visual Studio/program/robot_calibration.json`. Values use metres and radians
+in the UR base frame. `chess_main.py` refuses to connect to the robot when
+these values are missing or implausible, and reloads them at the next turn if
+changed during a game. The three measured centres permit a board rotated in
+the robot's XY plane. Check the actual workspace, tool orientation and travel
+height before setting CHESS_ROBOT_ENABLED=1. Camera calibration does not
+measure robot coordinates, and the board must remain fixed relative to the
+robot until robot-to-board tracking is added.
 
 This update targets the repository's Universal Robots + Robotiq hardware and
 uses its existing Python-URX interface. It is not a Dobot driver replacement.
@@ -67,20 +71,27 @@ if those packages are not already present. Set `STOCKFISH_PATH` to an installed
 Stockfish executable to display its suggested move.
 
 The display offers original camera and perspective-corrected views, a live
-board outline, changed squares, legal move candidates, and Stockfish analysis
-for the displayed FEN. Choose the physical a8 corner before reading moves.
-The perspective view is aligned by the board tracker, uses a rolling three
-frame median to suppress isolated video noise, and gently enhances luminance
-with CLAHE. Move detection still uses the unfiltered warped frames so the
-visual treatment does not alter its decision thresholds.
+board outline, changed squares, legal move candidates, turn, game reset, and
+Stockfish analysis for the displayed FEN. Choose the physical a8 corner before
+reading moves. The tracker checks the visible grid and corrects accumulated
+perspective drift. After alignment, a selectable 1/3/5/7-frame temporal median
+suppresses transient video noise, followed by adjustable CLAHE contrast. These
+controls change both the displayed image and the image used to recognize moves;
+changing either rebuilds the reference to avoid a false move.
 In the perspective tab, buttons 1-4 reveal each cumulative stage: geometry,
 geometry plus temporal median, geometry plus median and contrast, then the
 complete diagnostic overlay. Selecting a stage changes only the presentation;
 the backend keeps running its complete analysis on every frame.
 Possible square changes remain visible as text for debugging; orange overlays
-appear only once the change matches a stable legal move.
+appear only once the change matches a stable legal move. Changes outside all
+legal moves for the current player are excluded from move recognition, while
+castling and en passant keep their extra affected squares.
 The move and FEN controls update this display's game state; they do not move
-the robot. The dashboard never connects to the robot.
+the robot. The dashboard queries the UR Dashboard Server for remote mode,
+robot mode, safety, program and serial, and checks whether the RTDE and script
+ports are reachable. These are read-only checks; the display never sends a
+motion, power, unlock or play command. Saved addresses and filter settings are
+kept in `Visual Studio/program/dashboard_settings.json`.
 
 During a BOOX full-page refresh, tracking pauses and retries locating the
 board every five seconds for up to one minute. A successful relock spends five

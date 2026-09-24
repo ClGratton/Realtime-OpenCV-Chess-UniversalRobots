@@ -15,9 +15,10 @@ class BoardTrackingError(RuntimeError):
 
 
 class BoardTracker:
-    def __init__(self, size=(800, 800), detection_interval=24):
+    def __init__(self, size=(800, 800), detection_interval=24, periodic_detection=True):
         self.size = size
         self.detection_interval = detection_interval
+        self.periodic_detection = periodic_detection
         self.corners = None
         self.previous_gray = None
         self.frames_since_detection = 0
@@ -103,7 +104,9 @@ class BoardTracker:
             raise BoardTrackingError("Camera resolution changed; relock the board.")
         tracked = self._track_corners(gray)
         detected = None
-        attempted_detection = tracked is None or self.frames_since_detection >= self.detection_interval
+        attempted_detection = tracked is None or (
+            self.periodic_detection and self.frames_since_detection >= self.detection_interval
+        )
         if attempted_detection:
             detected = detect_board_corners(image, fast=tracked is not None)
         if tracked is None and detected is None:

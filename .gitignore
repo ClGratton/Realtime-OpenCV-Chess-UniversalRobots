@@ -1,2 +1,4 @@
 __pycache__/
 *.py[cod]
+robot_calibration.json
+dashboard_settings.json

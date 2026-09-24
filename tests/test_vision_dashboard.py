@@ -1,14 +1,19 @@
 """Regression checks for e-ink refresh recovery in the live display."""
 import time
+import tempfile
 import unittest
 from unittest.mock import patch
+from pathlib import Path
 
 import cv2
+import chess
 import numpy as np
 
 from image_methods.board_tracker import BoardTrackingError
 from image_methods.find_position_black import MoveDetectionError
-from vision_dashboard import BoardViewFilter, VisionDashboard
+from arm_methods.calculatePosition import calculatePosition
+from robot_calibration import validate_calibration
+from vision_dashboard import BoardViewFilter, GRID_TARGET, VisionDashboard, detect_visible_grid, legal_move_squares
 
 
 CORNERS = np.float32([[80, 80], [719, 80], [719, 719], [80, 719]])
@@ -25,6 +30,67 @@ def patterned_board():
 
 
 class VisionDashboardTests(unittest.TestCase):
+    def test_live_filter_settings_survive_dashboard_restart(self):
+        with tempfile.TemporaryDirectory() as directory, \
+             patch("vision_dashboard.SETTINGS_FILE", Path(directory) / "settings.json"):
+            dashboard = VisionDashboard("test")
+            dashboard.command({"action":"view_settings", "window":5, "contrast":60})
+            dashboard.orientation = 3
+            dashboard.orientation_confirmed = True
+            dashboard._save_settings()
+            restarted = VisionDashboard("test")
+        self.assertEqual(restarted.snapshot()["view_window"], 5)
+        self.assertEqual(restarted.snapshot()["view_contrast"], 60)
+        self.assertTrue(restarted.snapshot()["orientation_confirmed"])
+
+    def test_filter_settings_change_images_used_by_move_detection(self):
+        dashboard = VisionDashboard("test")
+        dashboard.tracker.corners = GRID_TARGET.copy()
+        board = patterned_board()
+        dashboard.view_filter.configure(1, 0)
+        with patch.object(dashboard.tracker, "update", return_value=board), \
+             patch.object(dashboard, "_correct_warp", return_value=board), \
+             patch.object(dashboard, "_analyze_move") as analyze:
+            with dashboard.lock:
+                dashboard._process_frame(board, board)
+            np.testing.assert_array_equal(analyze.call_args.args[0], board)
+            dashboard.view_filter.configure(1, 100)
+            with dashboard.lock:
+                dashboard._process_frame(board, board)
+            np.testing.assert_array_equal(analyze.call_args.args[0], dashboard.latest_board_view)
+            self.assertGreater(float(np.mean(cv2.absdiff(dashboard.latest_board_view, board))), 1)
+
+    def test_three_point_calibration_maps_a_rotated_board(self):
+        a8 = [0.2, -0.3, 0.15, 0, 3.14, 0]
+        h8 = [0.2, 0.0, 0.15, 0, 3.14, 0]
+        a1 = [0.5, -0.3, 0.15, 0, 3.14, 0]
+        source, target = calculatePosition("K", a8, h8, [0, 0], [7, 7], a1)
+        self.assertAlmostEqual(source[0], a8[0])
+        self.assertAlmostEqual(source[1], a8[1])
+        self.assertAlmostEqual(target[0], 0.5)
+        self.assertAlmostEqual(target[1], 0.0)
+
+    def test_unmeasured_robot_positions_are_rejected(self):
+        with self.assertRaises(ValueError):
+            validate_calibration({"a8":[0]*6, "h8":[0]*6, "a1":[0]*6, "tray":[0]*3})
+        dashboard = VisionDashboard("test")
+        dashboard.calibration = None
+        with self.assertRaisesRegex(ValueError, "non calibrate"):
+            dashboard.command({"action":"connect_robot"})
+
+    def test_grid_feedback_corrects_a_skewed_warp(self):
+        misplaced = np.float32([[22, 8], [775, 48], [765, 775], [24, 745]])
+        transform = cv2.getPerspectiveTransform(CORNERS, misplaced)
+        camera = cv2.warpPerspective(patterned_board(), transform, (800, 800))
+        dashboard = VisionDashboard("test")
+        dashboard.frame_number = 1
+        raw_warp = dashboard.tracker.initialize(camera, GRID_TARGET)
+        corrected = dashboard._correct_warp(camera, raw_warp)
+        found = detect_visible_grid(corrected)
+        self.assertIsNotNone(found)
+        self.assertGreater(dashboard.grid_error_px, 20)
+        self.assertLess(float(np.max(np.linalg.norm(found - GRID_TARGET, axis=1))), 3)
+
     def test_display_filter_removes_one_frame_video_noise(self):
         steady = np.full((80, 80, 3), 80, dtype=np.uint8)
         noisy = steady.copy()
@@ -50,8 +116,9 @@ class VisionDashboardTests(unittest.TestCase):
         np.testing.assert_array_equal(median, expected_median)
         np.testing.assert_array_equal(filtered, expected)
 
+    @patch("vision_dashboard.detect_visible_grid", return_value=None)
     @patch("vision_dashboard.detect_board_corners", return_value=CORNERS)
-    def test_refresh_recovers_on_next_five_second_attempt(self, detector):
+    def test_refresh_recovers_on_next_five_second_attempt(self, detector, _grid):
         image = patterned_board()
         dashboard = VisionDashboard("test")
         with dashboard.lock:
@@ -103,14 +170,36 @@ class VisionDashboardTests(unittest.TestCase):
     def test_unmatched_changes_are_not_painted_as_a_move(self):
         dashboard = VisionDashboard("test")
         dashboard.orientation_confirmed = True
+        dashboard.board.turn = chess.BLACK
         dashboard.baseline = np.zeros((800, 800, 3), dtype=np.uint8)
         after = dashboard.baseline.copy()
-        after[720:780, 620:680] = 200
-        after[720:780, 720:780] = 200
+        after[120:180, 20:80] = 200
+        after[120:180, 120:180] = 200
         with patch("vision_dashboard.infer_human_move", side_effect=MoveDetectionError("not legal")):
             dashboard._analyze_move(after)
         self.assertEqual(len(dashboard.changed), 2)
         self.assertEqual(dashboard.highlighted, [])
+
+    def test_irrelevant_ghost_square_does_not_block_a_legal_move(self):
+        dashboard = VisionDashboard("test")
+        dashboard.orientation_confirmed = True
+        dashboard.board.turn = chess.BLACK
+        dashboard.baseline = np.zeros((800, 800, 3), dtype=np.uint8)
+        after = dashboard.baseline.copy()
+        after[120:180, 420:480] = 200  # e7
+        after[320:380, 420:480] = 200  # e5
+        after[720:780, 720:780] = 200  # h1 ghost, illegal for Black
+        with patch("vision_dashboard.infer_human_move", return_value=[chess.Move.from_uci("e7e5")]) as infer:
+            for _ in range(5):
+                dashboard._analyze_move(after)
+        self.assertEqual([chess.square_name(s) for s in dashboard.changed], ["e7", "e5"])
+        self.assertEqual(dashboard.candidate.uci(), "e7e5")
+        self.assertEqual(int(infer.call_args.args[1][750, 750, 0]), 0)
+
+    def test_castling_rook_squares_remain_relevant(self):
+        board = chess.Board("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1")
+        squares = legal_move_squares(board)
+        self.assertTrue({chess.H1, chess.F1, chess.A1, chess.D1}.issubset(squares))
 
     def test_recovery_stops_after_sixty_seconds(self):
         image = patterned_board()

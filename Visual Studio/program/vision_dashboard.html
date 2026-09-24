@@ -37,9 +37,13 @@
     .steps { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 12px; }
     .steps button { font-size: 13px; padding: 7px 10px; border-radius: 9px; }
     .steps[hidden] { display: none; }
+    .filter-controls { display: flex; gap: 18px; flex-wrap: wrap; margin: 0 0 12px; }
+    .filter-controls label { flex: 1 1 210px; color: var(--muted); font-size: 13px; }
+    .filter-controls input { margin-top: 4px; padding: 0; accent-color: var(--green); }
+    .filter-controls[hidden] { display: none; }
     .counter { color: var(--muted); font-size: 13px; text-align: right; }
     .video-wrap { display: flex; justify-content: center; align-items: center; overflow: hidden; border-radius: 12px; background: #070c10; min-height: 480px; height: min(68vh, 830px); position: relative; }
-    .video-wrap img { width: 100%; height: 100%; object-fit: contain; }
+    .video-wrap canvas { width: 100%; height: 100%; object-fit: contain; }
     .video-caption { display: flex; flex-wrap: wrap; gap: 8px 22px; justify-content: space-between; color: var(--muted); font-size: 13px; padding: 11px 4px 0; }
     .rail { display: grid; gap: 14px; }
     .card { padding: 19px 20px; }
@@ -47,6 +51,7 @@
     .move { font-size: clamp(35px, 4.4vw, 63px); line-height: 1; letter-spacing: -.055em; font-weight: 800; color: var(--green); margin: 4px 0 8px; }
     .move.unknown { color: var(--muted); font-size: 36px; }
     .move-small { font-size: 35px; color: var(--amber); margin: 5px 0 8px; font-weight: 800; }
+    .turn-badge { display: inline-block; border: 1px solid var(--green); background: #244d3e; border-radius: 9px; padding: 6px 10px; font-weight: 800; margin-bottom: 13px; }
     .tag { display: inline-block; color: var(--muted); border: 1px solid var(--line); border-radius: 50px; padding: 4px 10px; font-size: 12px; margin-top: 8px; }
     .row { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
     .row strong { text-align: right; overflow-wrap: anywhere; }
@@ -56,6 +61,12 @@
     .controls button { padding: 8px 11px; }
     input { width: 100%; background: #0d1821; color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; outline: none; }
     input:focus { border-color: var(--green); }
+    dialog { width: min(650px, calc(100vw - 26px)); max-height: 88vh; overflow: auto; border: 1px solid var(--line); border-radius: 18px; background: #14202d; color: var(--text); padding: 22px; box-shadow: 0 25px 90px #000b; }
+    dialog::backdrop { background: #000a; }
+    dialog label { display: block; margin-top: 12px; color: var(--muted); }
+    dialog h3 { margin: 22px 0 6px; }
+    .setting-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .setting-head h2 { margin: 0; }
     .orientation { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
     .orientation button { min-width: 42px; }
     .footer { color: var(--muted); font-size: 13px; margin-top: 17px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
@@ -67,7 +78,7 @@
   <div class="page">
     <header>
       <div><div class="eyebrow">Scuole aperte · Laboratorio di robotica</div><h1>Scacchi, vista del computer</h1><p class="subtitle">Quello che la camera vede, quello che il programma riconosce, quello che Stockfish suggerisce.</p></div>
-      <div class="live-status"><span id="dot" class="dot"></span><div><div id="status" class="status-main">Collegamento...</div><div id="age" class="status-sub">Attesa fotogramma</div></div></div>
+      <div class="live-status"><span id="dot" class="dot"></span><div><div id="status" class="status-main">Collegamento...</div><div id="age" class="status-sub">Attesa fotogramma</div></div><button type="button" aria-label="Impostazioni" title="Impostazioni" onclick="openSettings()">⚙</button></div>
     </header>
 
     <main class="layout">
@@ -82,17 +93,20 @@
           <button class="step" data-step="contrast" onclick="setStage('contrast')">3 · + contrasto</button>
           <button class="step" data-step="debug" onclick="setStage('debug')">4 · + diagnostica</button>
         </div>
-        <div class="video-wrap"><img id="feed" alt="Video live della scacchiera dal telefono"></div>
+        <div id="filter-controls" class="filter-controls"><label for="window-setting">Mediana: <strong id="window-value">3 fotogrammi</strong><input id="window-setting" type="range" min="1" max="7" step="2" value="3" oninput="queueFilterSettings()"></label><label for="contrast-setting">Contrasto: <strong id="contrast-value">45%</strong><input id="contrast-setting" type="range" min="0" max="100" step="5" value="45" oninput="queueFilterSettings()"></label></div>
+        <div class="video-wrap"><canvas id="feed" role="img" aria-label="Video live della scacchiera dal telefono"></canvas></div>
         <div class="video-caption"><span id="view-help">I numeri indicano i quattro angoli trovati dalla camera.</span><span id="robot">Robot: disabilitato</span></div>
       </section>
 
       <aside class="rail">
         <section class="card hero">
-          <h2>Mossa proposta da Stockfish</h2>
+          <div id="turn-role" class="turn-badge">Turno in attesa</div>
+          <h2 id="planned-heading">Mossa proposta da Stockfish</h2>
           <div id="planned" class="move unknown">—</div>
           <p id="planned-detail" class="muted">Analisi della posizione corrente.</p>
           <span id="engine" class="tag">Motore in avvio</span>
-          <div class="controls"><button id="confirm-engine" onclick="action('confirm_engine')">Segna come eseguita</button></div>
+          <div class="controls"><button id="confirm-engine" onclick="action('confirm_engine')">Segna come eseguita</button><button onclick="action('new_game')">Reset partita</button><button onclick="openCalibration()">Calibra posizioni</button></div>
+          <p id="calibration-status" class="muted" style="margin-top:10px">Calibrazione robot: in attesa</p>
         </section>
 
         <section class="card">
@@ -116,7 +130,7 @@
           <p class="muted">L'angolo <strong>a8</strong> è quello in alto a sinistra per chi gioca con il Bianco in basso. Scegli il numero visto nel feed originale.</p>
           <div class="orientation"><span>Angolo a8:</span><button class="corner" data-corner="1" onclick="chooseCorner(1)">1</button><button class="corner" data-corner="2" onclick="chooseCorner(2)">2</button><button class="corner" data-corner="3" onclick="chooseCorner(3)">3</button><button class="corner" data-corner="4" onclick="chooseCorner(4)">4</button></div>
           <p id="orientation-note" class="warning" style="margin-top:9px">La vista attuale suggerisce l'angolo 4; confermalo prima di leggere le mosse.</p>
-          <div class="controls"><button onclick="action('relock')">Riloca scacchiera</button><button onclick="action('new_game')">Nuova partita</button><button onclick="document.documentElement.requestFullscreen()">Schermo intero</button></div>
+          <div class="controls"><button onclick="action('relock')">Riloca scacchiera</button><button onclick="document.documentElement.requestFullscreen()">Schermo intero</button></div>
           <div class="row"><span>Turno</span><strong id="turn">—</strong></div>
           <div class="row"><span>Ultima mossa confermata</span><strong id="last-move">—</strong></div>
           <label for="fen" class="muted" style="display:block;margin-top:15px">Posizione FEN, se la partita è già iniziata</label>
@@ -127,27 +141,79 @@
     </main>
     <div class="footer"><span id="source">Camera: —</span><span>Le mosse mostrate sono analisi. Nessun comando viene inviato al robot.</span></div>
   </div>
+  <dialog id="settings-dialog"><div class="setting-head"><h2>Impostazioni e diagnostica</h2><button onclick="$('settings-dialog').close()" aria-label="Chiudi">✕</button></div>
+    <label for="camera-setting">URL video IP Webcam<input id="camera-setting" spellcheck="false" placeholder="http://192.168.22.119:8080/video"></label>
+    <label for="robot-setting">IP controller UR<input id="robot-setting" spellcheck="false" placeholder="192.168.17.168"></label>
+    <div class="controls"><button onclick="saveSettings()">Salva indirizzi</button></div>
+    <h3>Stato robot · sola lettura</h3><div id="robot-tests" class="muted">Verifica in corso</div>
+    <p class="muted" style="margin-top:12px">Il pannello verifica Dashboard 29999, RTDE 30004 e porta script 30002; legge controllo remoto, modalità robot, sicurezza, programma e seriale. Non attiva il braccio.</p>
+    <div class="controls"><button onclick="openCalibration()">Calibra posizioni</button></div>
+  </dialog>
+  <dialog id="calibration-dialog"><div class="setting-head"><h2>Posizioni del braccio</h2><button onclick="$('calibration-dialog').close()" aria-label="Chiudi">✕</button></div>
+    <p class="muted">Inserisci le pose TCP misurate in base robot: x, y, z in metri e rx, ry, rz in radianti, al centro delle caselle indicate. Usa la stessa altezza di presa e lo stesso orientamento della pinza. Nessun movimento viene eseguito qui.</p>
+    <label for="pose-a8">Centro a8 · 6 valori<input id="pose-a8" placeholder="x, y, z, rx, ry, rz"></label>
+    <label for="pose-h8">Centro h8 · 6 valori<input id="pose-h8" placeholder="x, y, z, rx, ry, rz"></label>
+    <label for="pose-a1">Centro a1 · 6 valori<input id="pose-a1" placeholder="x, y, z, rx, ry, rz"></label>
+    <label for="pose-tray">Vassoio catture · x, y, z<input id="pose-tray" placeholder="x, y, z"></label>
+    <div class="controls"><button onclick="saveCalibration()">Salva calibrazione</button></div>
+    <p id="calibration-message" class="muted" style="margin-top:12px"></p>
+  </dialog>
   <script>
     let view = 'board';
     let stage = 'debug';
     let latestFen = '';
     let serverDisconnected = false;
-    let reconnectTimer = null;
+    let frameGeneration = 0;
+    let frameAbort = null;
+    let lastRenderedAt = 0;
+    let filterTimer = null;
+    let settingsLoaded = false;
+    let calibrationLoaded = false;
     const $ = id => document.getElementById(id);
+    const frameContext = $('feed').getContext('2d', {alpha:false});
 
-    function restartFeed() {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
-      const path = view === 'raw' ? '/stream/raw' : stage === 'debug' ? '/stream/board' : '/stream/board/' + stage;
-      $('feed').src = path + '?t=' + Date.now();
+    function framePath() {
+      return view === 'raw' ? '/frame/raw.jpg'
+        : stage === 'debug' ? '/frame/board.jpg' : '/frame/board/' + stage + '.jpg';
     }
 
-    $('feed').addEventListener('error', () => {
-      if (!reconnectTimer) reconnectTimer = setTimeout(restartFeed, 1500);
-    });
+    function restartFeed() {
+      frameGeneration++;
+      if (frameAbort) frameAbort.abort();
+      $('feed').dataset.source = framePath();
+    }
+
+    async function renderFrame() {
+      const generation = frameGeneration;
+      const abort = new AbortController();
+      frameAbort = abort;
+      const timeout = setTimeout(() => abort.abort(), 2000);
+      let delay = 50;
+      try {
+        const response = await fetch(framePath() + '?t=' + Date.now(),
+          {cache:'no-store', signal:abort.signal});
+        if (!response.ok) throw new Error('Fotogramma non disponibile');
+        const bitmap = await createImageBitmap(await response.blob());
+        if (generation === frameGeneration) {
+          const canvas = $('feed');
+          if (canvas.width !== bitmap.width || canvas.height !== bitmap.height) {
+            canvas.width = bitmap.width;
+            canvas.height = bitmap.height;
+          }
+          frameContext.drawImage(bitmap, 0, 0);
+          lastRenderedAt = Date.now();
+        }
+        bitmap.close();
+      } catch (_) {
+        delay = generation === frameGeneration ? 500 : 0;
+      } finally {
+        clearTimeout(timeout);
+        if (frameAbort === abort) frameAbort = null;
+        setTimeout(renderFrame, delay);
+      }
+    }
 
     function setView(next) {
-      if (view === next && $('feed').src) return;
       view = next;
       restartFeed();
       $('raw-tab').classList.toggle('selected', next === 'raw');
@@ -157,7 +223,6 @@
 
     function setStage(next) {
       if (!['geometry', 'median', 'contrast', 'debug'].includes(next)) return;
-      if (stage === next && view === 'board') return;
       stage = next;
       view = 'board';
       restartFeed();
@@ -168,6 +233,7 @@
 
     function updateStageUI() {
       $('steps').hidden = view === 'raw';
+      $('filter-controls').hidden = view === 'raw';
       document.querySelectorAll('.step').forEach(b => {
         const selected = view === 'board' && b.dataset.step === stage;
         b.classList.toggle('selected', selected);
@@ -175,8 +241,8 @@
       });
       const descriptions = {
         geometry: '1 · La prospettiva viene raddrizzata e la scacchiera resta ferma nella stessa posizione del video.',
-        median: '2 · Mediana mobile di 3 frame già allineati: elimina disturbi che compaiono in un solo fotogramma.',
-        contrast: '3 · CLAHE aumenta con moderazione il contrasto locale; osserva meglio pezzi e caselle.',
+        median: `2 · Mediana mobile di ${$('window-setting').value} frame già allineati: riduce i disturbi temporanei.`,
+        contrast: `3 · CLAHE al ${$('contrast-setting').value}% migliora il contrasto locale dopo la mediana.`,
         debug: '4 · Analisi completa: griglia verde, arancione per mosse legali stabili, blu Stockfish e verde mossa letta.'
       };
       $('view-help').textContent = view === 'raw'
@@ -188,7 +254,34 @@
       try {
         const response = await fetch('/api/action', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:name, ...extra})});
         if (!response.ok) throw new Error(await response.text());
+        return true;
       } catch (error) { $('detail').textContent = 'Comando non inviato: ' + error.message; }
+      return false;
+    }
+    function queueFilterSettings() {
+      $('window-value').textContent = $('window-setting').value === '1' ? '1 fotogramma' : $('window-setting').value + ' fotogrammi';
+      $('contrast-value').textContent = $('contrast-setting').value + '%';
+      updateStageUI();
+      clearTimeout(filterTimer);
+      filterTimer = setTimeout(() => { filterTimer = null; action('view_settings', {
+        window:Number($('window-setting').value), contrast:Number($('contrast-setting').value)
+      }); }, 180);
+    }
+    function openSettings() { $('settings-dialog').showModal(); }
+    function openCalibration() { $('settings-dialog').close(); $('calibration-dialog').showModal(); }
+    async function saveSettings() {
+      const ok = await action('settings', {camera_url:$('camera-setting').value.trim(), robot_ip:$('robot-setting').value.trim()});
+      if (ok) $('detail').textContent = 'Indirizzi aggiornati';
+    }
+    function parsePose(id) { return $(id).value.split(/[;,\s]+/).filter(Boolean).map(Number); }
+    async function saveCalibration() {
+      const positions = {a8:parsePose('pose-a8'), h8:parsePose('pose-h8'), a1:parsePose('pose-a1'), tray:parsePose('pose-tray')};
+      if ([positions.a8, positions.h8, positions.a1].some(p => p.length !== 6) || positions.tray.length !== 3) {
+        $('calibration-message').textContent = 'Servono 6 valori per ogni casella e 3 per il vassoio.';
+        return;
+      }
+      const ok = await action('calibration', {positions});
+      $('calibration-message').textContent = ok ? 'Posizioni salvate. Prima di usare il braccio verifica fisicamente il percorso e le altezze.' : $('detail').textContent;
     }
     function chooseCorner(number) { action('orientation', {corner:number}); }
     function applyFen() { action('fen', {fen:$('fen').value}); }
@@ -203,10 +296,27 @@
           restartFeed();
         }
         $('status').textContent = s.status;
-        $('age').textContent = s.age_seconds === null ? 'Attesa fotogramma' : `Fotogramma ${s.age_seconds.toFixed(1)} s fa`;
-        $('dot').className = 'dot ' + (s.age_seconds !== null && s.age_seconds > 3 ? 'bad' : s.tracked ? 'good' : '');
+        const displayAge = lastRenderedAt ? (Date.now() - lastRenderedAt) / 1000 : null;
+        $('age').textContent = displayAge === null ? 'Attesa fotogramma' : `Video ${displayAge.toFixed(1)} s fa · camera ${s.age_seconds === null ? 'in attesa' : s.age_seconds.toFixed(1) + ' s fa'}`;
+        $('dot').className = 'dot ' + (displayAge === null || displayAge > 3 || s.age_seconds !== null && s.age_seconds > 3 ? 'bad' : s.tracked ? 'good' : '');
         $('counter').textContent = `Fotogramma ${s.frame} · ${s.fps.toFixed(1)} fps`;
         $('robot').textContent = `Robot: ${s.robot}`;
+        $('turn-role').textContent = s.game_over ? 'Partita terminata' : `Turno ${s.turn_role.toLowerCase()} · ${s.turn}`;
+        $('planned-heading').textContent = s.turn_role === 'Braccio' ? 'Mossa proposta per il braccio' : 'Analisi Stockfish';
+        $('calibration-status').textContent = s.calibration_ready ? 'Posizioni robot salvate · movimenti disabilitati nel pannello' : 'Posizioni robot mancanti · connessione di controllo bloccata';
+        const d = s.robot_diagnostics || {};
+        $('robot-tests').innerHTML = '';
+        for (const [label, value] of [
+          ['Controller', d.connection], ['Dashboard 29999', d.dashboard_port],
+          ['RTDE 30004', d.rtde_port], ['Script 30002', d.script_port],
+          ['Controllo remoto', d.remote === 'true' ? 'Attivo' : d.remote === 'false' ? 'Disattivo' : d.remote], ['Modalità robot', d.robot_mode],
+          ['Sicurezza', d.safety], ['Programma', d.program], ['Seriale', d.serial],
+          ['Calibrazione posizioni', s.calibration_ready ? 'Salvata' : 'Mancante']
+        ]) { const line = document.createElement('div'); line.className = 'row'; const name = document.createElement('span'); name.textContent = label;
+          const result = document.createElement('strong'); result.textContent = typeof value === 'boolean' ? (value ? 'Aperta' : 'Chiusa') : (value ?? '—');
+          line.append(name, result); $('robot-tests').append(line); }
+        if (!settingsLoaded) { $('camera-setting').value = s.camera_url; $('robot-setting').value = s.robot_ip; settingsLoaded = true; }
+        if (!calibrationLoaded && s.calibration) { for (const [key, id] of [['a8','pose-a8'],['h8','pose-h8'],['a1','pose-a1'],['tray','pose-tray']]) $(id).value = s.calibration[key].join(', '); calibrationLoaded = true; }
         $('tracked').textContent = s.tracked ? 'Agganciata' : 'In pausa / ricerca';
         $('changed').textContent = s.changed_squares.length ? s.changed_squares.join(', ') : 'Nessuno';
         $('background').textContent = `${Math.round(s.background_change * 100)}%`;
@@ -223,8 +333,12 @@
         $('orientation-note').textContent = s.orientation_confirmed ? `a8 confermato: angolo ${s.orientation}` : `a8 suggerito: angolo ${s.orientation}. Confermalo prima di leggere le mosse.`;
         $('orientation-note').className = s.orientation_confirmed ? 'muted' : 'warning';
         document.querySelectorAll('.corner').forEach(b => b.classList.toggle('selected', Number(b.dataset.corner) === s.orientation));
-        $('confirm-candidate').disabled = !s.candidate_uci;
-        $('confirm-engine').disabled = !s.planned_uci;
+        $('confirm-candidate').disabled = !s.candidate_uci || s.turn_role !== 'Persona';
+        $('confirm-engine').disabled = !s.planned_uci || s.turn_role !== 'Braccio';
+        if (!$('window-setting').matches(':active') && !filterTimer) {
+          $('window-setting').value = s.view_window; $('window-value').textContent = s.view_window === 1 ? '1 fotogramma' : s.view_window + ' fotogrammi';
+          $('contrast-setting').value = s.view_contrast; $('contrast-value').textContent = s.view_contrast + '%';
+        }
         $('source').textContent = `Camera: ${s.camera_url}`;
         if (s.fen !== latestFen) { latestFen = s.fen; $('fen').value = s.fen; }
       } catch (error) {
@@ -235,6 +349,7 @@
       }
     }
     setView('board');
+    renderFrame();
     refresh();
     setInterval(refresh, 400);
   </script>

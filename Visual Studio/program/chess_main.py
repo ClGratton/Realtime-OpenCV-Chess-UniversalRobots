@@ -22,6 +22,7 @@ from arm_methods.calculatePosition import calculatePosition
 from arm_methods.movePiece import movePiece
 from config import camera_ip, robot_ip, robotExists, debug, time_limit, eaten_position, checkboard_coord_start, checkboard_coord_end
 from arm_methods.getPieceOffset import getPieceOffset
+from robot_calibration import load_calibration
 
 
 _camera = None
@@ -553,33 +554,33 @@ while True:
 ###################################################################################
 main_checkboard_coord_start = list(checkboard_coord_start)
 main_checkboard_coord_end = list(checkboard_coord_end)
+main_checkboard_coord_a1 = None
+main_eaten_position = list(eaten_position)
 if robotExists:
-    # Connect to the robot
+    calibration = load_calibration()
+    if calibration is None:
+        raise RuntimeError("Calibra a8, h8, a1 e vassoio prima di collegare il robot")
+    main_checkboard_coord_start = calibration["a8"]
+    main_checkboard_coord_end = calibration["h8"]
+    main_checkboard_coord_a1 = calibration["a1"]
+    main_eaten_position = calibration["tray"]
+    # Only connect after all four positions have been checked.
     robot = Robot(robot_ip)
-    # An all-zero pose means calibration has not been saved. Check each pose
-    # independently; sharing the old counter skipped the second calibration.
-    if all(float(value) == 0.0 for value in checkboard_coord_start):
-        print("Move the arm to the upper left corner while grabbing the highest piece, then press q")
-        while True:
-            if cv2.waitKey(1) == ord('q'):
-                break
-        main_checkboard_coord_start = robot.getl()
-    else:
-        main_checkboard_coord_start = list(checkboard_coord_start)
-
-    if all(float(value) == 0.0 for value in checkboard_coord_end):
-        print("Move the arm to the lower right corner while grabbing the highest piece, then press q")
-        while True:
-            if cv2.waitKey(1) == ord('q'):
-                break
-        main_checkboard_coord_end = robot.getl()
-    else:
-        main_checkboard_coord_end = list(checkboard_coord_end)
 ###################################################################################
 ## Start Game
 ###################################################################################
 
 while not board.is_game_over(claim_draw=True):
+    if robotExists:
+        # A revised calibration takes effect at the next turn, before any
+        # motion. Missing or invalid data stops the game before moving.
+        calibration = load_calibration()
+        if calibration is None:
+            raise RuntimeError("Calibrazione rimossa: fermo il gioco prima del movimento")
+        main_checkboard_coord_start = calibration["a8"]
+        main_checkboard_coord_end = calibration["h8"]
+        main_checkboard_coord_a1 = calibration["a1"]
+        main_eaten_position = calibration["tray"]
 
     ## white turn 
     print("turn:", board.turn)
@@ -629,8 +630,9 @@ while not board.is_game_over(claim_draw=True):
                 main_checkboard_coord_end,
                 capture_box_coordinate,
                 capture_box_coordinate,
+                main_checkboard_coord_a1,
             )
-            target_position = [float(value) for value in eaten_position]
+            target_position = [float(value) for value in main_eaten_position]
             target_position.extend(main_checkboard_coord_start[3:6])
 
             if robotExists:
@@ -643,7 +645,7 @@ while not board.is_game_over(claim_draw=True):
                 movePiece(robot, captured_position, target_position)
             
         print("piece:",piece, "box_1_coordinate:",box_1_coordinate, "box_2_coordinate:",box_2_coordinate)
-        initial_position, target_position = calculatePosition(piece, main_checkboard_coord_start, main_checkboard_coord_end, box_1_coordinate, box_2_coordinate)
+        initial_position, target_position = calculatePosition(piece, main_checkboard_coord_start, main_checkboard_coord_end, box_1_coordinate, box_2_coordinate, main_checkboard_coord_a1)
         print("initial_position:",initial_position, "target_position:",target_position)
         
         if robotExists:
@@ -665,6 +667,7 @@ while not board.is_game_over(claim_draw=True):
                     main_checkboard_coord_end,
                     map_position[rook_from],
                     map_position[rook_to],
+                    main_checkboard_coord_a1,
                 )
                 movePiece(robot, rook_start, rook_end)
             if result.move.promotion:

@@ -8,27 +8,36 @@ move is Stockfish analysis of the displayed FEN, not a robot command.
 import argparse
 from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import ipaddress
 import json
 import os
 os.environ.setdefault("OPENCV_FFMPEG_LOGLEVEL", "16")
 from pathlib import Path
 import shutil
+import socket
 import threading
 import time
+from urllib.parse import urlsplit
 
 import chess
 import chess.engine
 import cv2
 import numpy as np
 
-from config import camera_ip
+from config import camera_ip, robot_ip
 from image_methods.board_tracker import BoardTracker, BoardTrackingError
 from image_methods.detect_points import _ordered_corners, detect_board_corners, orient_corners
 from image_methods.find_position_black import MoveDetectionError, infer_human_move
+from robot_calibration import load_calibration, save_calibration
 
 
 ROOT = Path(__file__).resolve().parent
+SETTINGS_FILE = ROOT / "dashboard_settings.json"
 SIZE = 800
+GRID_TARGET = np.float32([[0, 0], [SIZE - 1, 0], [SIZE - 1, SIZE - 1], [0, SIZE - 1]])
+CENTRAL_GRID = np.float32(
+    [[column * 100, row * 100] for row in (3, 4, 5) for column in (3, 4, 5)]
+)
 BOXES = np.array(
     [[[col * 100, row * 100, (col + 1) * 100, (row + 1) * 100]
       for col in range(8)] for row in range(8)], dtype=np.int32,
@@ -63,6 +72,22 @@ def changed_square_scores(before, after):
     return scores, background, changed
 
 
+def legal_move_squares(board):
+    """Squares that can legitimately change on this turn, including special moves."""
+    squares = set()
+    for move in board.legal_moves:
+        squares.update((move.from_square, move.to_square))
+        if board.is_castling(move):
+            rank = chess.square_rank(move.from_square)
+            if chess.square_file(move.to_square) == 6:
+                squares.update((chess.square(7, rank), chess.square(5, rank)))
+            else:
+                squares.update((chess.square(0, rank), chess.square(3, rank)))
+        if board.is_en_passant(move):
+            squares.add(move.to_square - 8 if board.turn else move.to_square + 8)
+    return squares
+
+
 def draw_arrow(image, move, color):
     if not move:
         return
@@ -73,42 +98,106 @@ def draw_arrow(image, move, color):
     cv2.arrowedLine(image, a, b, color, 7, cv2.LINE_AA, tipLength=0.2)
 
 
+def detect_visible_grid(warped):
+    """Find the outer board from all 49 corners, or the empty central 3x3."""
+    outer = detect_board_corners(warped)
+    if outer is not None:
+        return outer
+    gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
+    offset = 210
+    crop = gray[offset:590, offset:590]
+    detector = getattr(cv2, "findChessboardCornersSB", None)
+    if detector is None:
+        return None
+    enhanced = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(crop)
+    for candidate in (crop, enhanced):
+        found, points = detector(
+            candidate, (3, 3),
+            flags=cv2.CALIB_CB_EXHAUSTIVE | cv2.CALIB_CB_ACCURACY,
+        )
+        if not found:
+            continue
+        points = points.reshape(3, 3, 2) + offset
+        if abs(points[0, 2, 0] - points[0, 0, 0]) < abs(points[2, 0, 0] - points[0, 0, 0]):
+            points = points.transpose(1, 0, 2)
+        if points[0, 2, 0] < points[0, 0, 0]:
+            points = points[:, ::-1]
+        if points[2, 0, 1] < points[0, 0, 1]:
+            points = points[::-1]
+        if np.max(np.linalg.norm(points.reshape(-1, 2) - CENTRAL_GRID, axis=1)) > 65:
+            continue
+        homography, _ = cv2.findHomography(CENTRAL_GRID, points.reshape(-1, 2), 0)
+        if homography is None:
+            continue
+        projected = cv2.perspectiveTransform(CENTRAL_GRID.reshape(-1, 1, 2), homography)
+        if np.max(np.linalg.norm(projected.reshape(-1, 2) - points.reshape(-1, 2), axis=1)) > 5:
+            continue
+        return cv2.perspectiveTransform(GRID_TARGET.reshape(-1, 1, 2), homography).reshape(4, 2)
+    return None
+
+
 class BoardViewFilter:
-    """Light display-only filtering after geometric board stabilization."""
+    """Temporal median and moderate CLAHE after geometric stabilization."""
 
     def __init__(self):
-        self.frames = deque(maxlen=3)
+        self.window = 3
+        self.contrast = 45
+        self.frames = deque(maxlen=self.window)
         self.clahe = cv2.createCLAHE(clipLimit=1.5, tileGridSize=(8, 8))
+
+    def configure(self, window, contrast):
+        window = int(window)
+        contrast = int(contrast)
+        if window not in (1, 3, 5, 7):
+            raise ValueError("La mediana richiede 1, 3, 5 o 7 fotogrammi")
+        if not 0 <= contrast <= 100:
+            raise ValueError("Il contrasto deve essere tra 0 e 100")
+        if window != self.window:
+            self.frames = deque(maxlen=window)
+            self.window = window
+        self.contrast = contrast
 
     def reset(self):
         self.frames.clear()
 
     def process(self, warped):
-        self.frames.append(warped.copy())
+        # The BOOX board is monochrome. Filter one luminance channel to keep
+        # the 5/7-frame controls responsive on the live camera.
+        gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
+        self.frames.append(gray)
         if len(self.frames) == 3:
             a, b, c = self.frames
             # Median of three rejects isolated JPEG noise without the long
             # trails of a four-frame arithmetic average.
             stable = np.maximum(np.minimum(a, b), np.minimum(np.maximum(a, b), c))
+        elif len(self.frames) == self.window and self.window > 3:
+            stable = np.partition(np.stack(self.frames), self.window // 2, axis=0)[self.window // 2]
         else:
-            stable = warped
-        lab = cv2.cvtColor(stable, cv2.COLOR_BGR2LAB)
-        luminance, channel_a, channel_b = cv2.split(lab)
-        improved = self.clahe.apply(luminance)
-        lab = cv2.merge((cv2.addWeighted(luminance, 0.55, improved, 0.45, 0),
-                         channel_a, channel_b))
-        return stable, cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+            stable = gray
+        stable_bgr = cv2.cvtColor(stable, cv2.COLOR_GRAY2BGR)
+        if self.contrast == 0:
+            return stable_bgr, stable_bgr.copy()
+        improved = self.clahe.apply(stable)
+        strength = self.contrast / 100.0
+        enhanced = cv2.addWeighted(stable, 1 - strength, improved, strength, 0)
+        return stable_bgr, cv2.cvtColor(enhanced, cv2.COLOR_GRAY2BGR)
 
 
 class VisionDashboard:
     def __init__(self, url):
+        settings = json.loads(SETTINGS_FILE.read_text(encoding="utf-8")) if SETTINGS_FILE.is_file() else {}
         self.url = url
+        self.robot_ip = robot_ip
+        self.robot_diagnostics = {"connection": "Verifica in corso"}
+        self.calibration = load_calibration()
         self.lock = threading.RLock()
         self.condition = threading.Condition(self.lock)
         self.commands = deque()
-        self.tracker = BoardTracker((SIZE, SIZE))
-        self.orientation = 3  # Current BOOX view: image corner 4 is presumed a8.
-        self.orientation_confirmed = False
+        # Optical flow follows every frame. A normalized grid check below
+        # replaces the raw-image periodic detector, which can drift on e-ink.
+        self.tracker = BoardTracker((SIZE, SIZE), periodic_detection=False)
+        self.orientation = int(settings.get("orientation_corner", 4)) - 1
+        self.orientation_confirmed = bool(settings.get("orientation_confirmed", False))
         self.tracking_paused = False
         self.recovery_started = None
         self.next_recovery_at = None
@@ -118,9 +207,12 @@ class VisionDashboard:
         self.reference_warning = False
         self.baseline = None
         self.latest_warp = None
+        self.grid_last_check = -1000
+        self.grid_error_px = None
         self.latest_median_view = None
         self.latest_board_view = None
         self.view_filter = BoardViewFilter()
+        self.view_filter.configure(settings.get("view_window", 3), settings.get("view_contrast", 45))
         self.board = chess.Board()
         self.candidate = None
         self.candidate_seen = 0
@@ -137,6 +229,7 @@ class VisionDashboard:
         self.detail = "In attesa del primo fotogramma"
         self.changed = []
         self.highlighted = []
+        self.change_scores = np.zeros((8, 8), dtype=np.float32)
         self.background = 0.0
         self.last_move = None
         self.engine_event = threading.Event()
@@ -146,9 +239,54 @@ class VisionDashboard:
     def start(self):
         threading.Thread(target=self._camera_loop, name="camera", daemon=True).start()
         threading.Thread(target=self._engine_loop, name="stockfish", daemon=True).start()
+        threading.Thread(target=self._robot_status_loop, name="robot-readonly", daemon=True).start()
+
+    def _save_settings(self):
+        SETTINGS_FILE.write_text(json.dumps({
+            "camera_url": self.url, "robot_ip": self.robot_ip,
+            "view_window": self.view_filter.window, "view_contrast": self.view_filter.contrast,
+            "orientation_corner": self.orientation + 1,
+            "orientation_confirmed": self.orientation_confirmed,
+        }, indent=2), encoding="utf-8")
 
     def command(self, payload):
         with self.lock:
+            kind = payload.get("action")
+            if kind == "settings":
+                camera = str(payload["camera_url"]).strip()
+                parsed = urlsplit(camera)
+                if parsed.scheme not in ("http", "https") or not parsed.hostname or not parsed.path:
+                    raise ValueError("URL camera non valido: usa l'indirizzo completo del video")
+                address = str(ipaddress.ip_address(payload["robot_ip"]))
+                if self.url != camera:
+                    self.url = camera
+                    self.orientation_confirmed = False
+                    self.tracker = BoardTracker((SIZE, SIZE), periodic_detection=False)
+                    self.view_filter.reset()
+                    self.latest_warp = None
+                    self.latest_median_view = None
+                    self.latest_board_view = None
+                    self.baseline = None
+                    self._clear_candidate()
+                self.robot_ip = address
+                self.robot_diagnostics = {"connection": "Verifica in corso"}
+                self._save_settings()
+                return {"ok": True}
+            if kind == "view_settings":
+                self.view_filter.configure(payload["window"], payload["contrast"])
+                self._save_settings()
+                self.baseline = None
+                self._clear_candidate()
+                self.settle_until = time.monotonic() + 1.0
+                self.detail = "Filtri di visione aggiornati; riferimento in ricostruzione"
+                return {"ok": True}
+            if kind == "calibration":
+                self.calibration = save_calibration(payload["positions"])
+                return {"ok": True}
+            if kind == "connect_robot":
+                if self.calibration is None:
+                    raise ValueError("Collegamento rifiutato: posizioni del robot non calibrate")
+                raise ValueError("Il pannello visione non invia comandi al robot")
             self.commands.append(payload)
         return {"ok": True}
 
@@ -172,7 +310,13 @@ class VisionDashboard:
                 "orientation_confirmed": self.orientation_confirmed,
                 "reference_ready": self.baseline is not None,
                 "reference_warning": self.reference_warning,
+                "grid_error_px": self.grid_error_px,
                 "changed_squares": [chess.square_name(sq) for sq in self.changed],
+                "change_scores": {
+                    f"{chr(97 + col)}{8 - row}": round(float(self.change_scores[row, col]), 3)
+                    for row in range(8) for col in range(8)
+                    if self.change_scores[row, col] >= 0.01
+                },
                 "background_change": round(self.background, 3),
                 "candidate_uci": candidate.uci() if candidate else None,
                 "candidate_san": board.san(candidate) if candidate and candidate in board.legal_moves else None,
@@ -182,8 +326,16 @@ class VisionDashboard:
                 "engine_error": self.engine_error,
                 "fen": board.fen(),
                 "turn": "Bianco" if board.turn else "Nero",
+                "turn_role": "Braccio" if board.turn else "Persona",
+                "game_over": board.is_game_over(claim_draw=True),
                 "last_move": self.last_move,
                 "robot": "Disabilitato: sola visione",
+                "robot_ip": self.robot_ip,
+                "robot_diagnostics": self.robot_diagnostics.copy(),
+                "calibration_ready": self.calibration is not None,
+                "calibration": self.calibration,
+                "view_window": self.view_filter.window,
+                "view_contrast": self.view_filter.contrast,
             }
 
     def _apply_commands(self, image):
@@ -198,21 +350,22 @@ class VisionDashboard:
                     if index not in range(4):
                         raise ValueError("L'angolo a8 deve essere 1, 2, 3 o 4")
                     self.orientation = index
-                    self.orientation_confirmed = True
                     self._relock(image)
+                    self.orientation_confirmed = True
+                    self._save_settings()
                 elif kind == "relock":
                     self._relock(image)
                 elif kind == "reference":
                     if self.latest_warp is None or self.tracking_paused:
                         raise ValueError("Scacchiera non agganciata")
-                    self.baseline = self.latest_warp.copy()
+                    self.baseline = self.latest_board_view.copy() if self.latest_board_view is not None else self.latest_warp.copy()
                     self._clear_candidate()
                     self.reference_warning = False
                     self.detail = "Nuovo fotogramma di riferimento acquisito"
                 elif kind == "new_game":
                     self.board = chess.Board()
                     self.last_move = None
-                    self.baseline = self.latest_warp.copy() if self.latest_warp is not None else None
+                    self.baseline = self.latest_board_view.copy() if self.latest_board_view is not None else None
                     self._clear_candidate()
                     self.reference_warning = False
                     self._invalidate_engine()
@@ -222,15 +375,19 @@ class VisionDashboard:
                         raise ValueError("Posizione FEN non valida")
                     self.board = board
                     self.last_move = None
-                    self.baseline = self.latest_warp.copy() if self.latest_warp is not None else None
+                    self.baseline = self.latest_board_view.copy() if self.latest_board_view is not None else None
                     self._clear_candidate()
                     self.reference_warning = False
                     self._invalidate_engine()
                 elif kind == "confirm_candidate":
+                    if self.board.turn:
+                        raise ValueError("Ora è il turno del braccio")
                     if self.candidate is None or self.candidate not in self.board.legal_moves:
                         raise ValueError("Non c'è una mossa riconosciuta da confermare")
                     self._push_move(self.candidate)
                 elif kind == "confirm_engine":
+                    if not self.board.turn:
+                        raise ValueError("Ora è il turno della persona")
                     if self.planned_move is None or self.planned_move not in self.board.legal_moves:
                         raise ValueError("Non c'è una mossa Stockfish da confermare")
                     self._push_move(self.planned_move)
@@ -242,7 +399,7 @@ class VisionDashboard:
     def _push_move(self, move):
         self.last_move = self.board.san(move)
         self.board.push(move)
-        self.baseline = self.latest_warp.copy() if self.latest_warp is not None else None
+        self.baseline = self.latest_board_view.copy() if self.latest_board_view is not None else None
         self._clear_candidate()
         self._invalidate_engine()
         self.detail = f"Mossa confermata: {self.last_move}"
@@ -258,6 +415,7 @@ class VisionDashboard:
         self.candidate_seen = 0
         self.changed = []
         self.highlighted = []
+        self.change_scores.fill(0)
         self.background = 0.0
 
     def _relock(self, image):
@@ -265,7 +423,10 @@ class VisionDashboard:
         if corners is None:
             raise ValueError("I 49 incroci della scacchiera non sono visibili")
         oriented = orient_corners(corners, self.orientation)
-        self.latest_warp = self.tracker.initialize(image, oriented)
+        raw_warp = self.tracker.initialize(image, oriented)
+        self.grid_last_check = -1000
+        self.grid_error_px = None
+        self.latest_warp = self._correct_warp(image, raw_warp)
         self.view_filter.reset()
         self.latest_median_view = None
         self.latest_board_view = None
@@ -275,12 +436,39 @@ class VisionDashboard:
         # E-ink refresh can leave a partially drawn board for a moment. Keep
         # updating the reference during this short settling period.
         self.settle_until = time.monotonic() + 5.0
-        self.baseline = self.latest_warp.copy()
+        self.baseline = None
         self.broad_change_since = None
         self.broad_last_view = None
         self._clear_candidate()
         self.status = "Scacchiera agganciata"
         self.detail = "Angoli rilevati automaticamente; riferimento aggiornato"
+
+    def _correct_warp(self, image, raw_warp):
+        """Use visible grid intersections to correct accumulated corner drift."""
+        if self.frame_number - self.grid_last_check >= 18:
+            self.grid_last_check = self.frame_number
+            found = detect_visible_grid(raw_warp)
+            if found is not None:
+                residuals = np.linalg.norm(found - GRID_TARGET, axis=1)
+                if float(np.max(residuals)) <= 160.0:
+                    self.grid_error_px = round(float(np.mean(residuals)), 1)
+                    if float(np.max(residuals)) > 6.0:
+                        warp_to_camera = cv2.getPerspectiveTransform(
+                            GRID_TARGET, np.asarray(self.tracker.corners, dtype=np.float32)
+                        )
+                        physical = cv2.perspectiveTransform(
+                            found.reshape(4, 1, 2), warp_to_camera
+                        ).reshape(4, 2)
+                        try:
+                            corrected = self.tracker.initialize(image, physical)
+                        except BoardTrackingError:
+                            raise BoardTrackingError(
+                                "La scacchiera non è interamente visibile dopo il riallineamento"
+                            )
+                        if self.baseline is None:
+                            self.view_filter.reset()
+                        return corrected
+        return raw_warp
 
     def _engine_loop(self):
         path = stockfish_path()
@@ -316,7 +504,8 @@ class VisionDashboard:
 
     def _camera_loop(self):
         while not self.stop_event.is_set():
-            camera = cv2.VideoCapture(self.url)
+            camera_url = self.url
+            camera = cv2.VideoCapture(camera_url)
             if not camera.isOpened():
                 with self.lock:
                     self.status = "Camera scollegata"
@@ -327,6 +516,8 @@ class VisionDashboard:
             camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             try:
                 while not self.stop_event.is_set():
+                    if self.url != camera_url:
+                        break
                     ok, raw = camera.read()
                     if not ok or raw is None:
                         raise RuntimeError("Il flusso video si è interrotto")
@@ -341,6 +532,42 @@ class VisionDashboard:
                 time.sleep(0.5)
             finally:
                 camera.release()
+
+    def _robot_status_loop(self):
+        while not self.stop_event.is_set():
+            with self.lock:
+                address = self.robot_ip
+            diagnostics = {"connection": "Non raggiungibile", "dashboard_port": False,
+                           "rtde_port": False, "script_port": False}
+            try:
+                with socket.create_connection((address, 29999), timeout=0.7) as connection:
+                    connection.settimeout(0.7)
+                    connection.recv(512)  # Dashboard greeting.
+                    diagnostics["dashboard_port"] = True
+                    diagnostics["connection"] = "Controller raggiungibile"
+                    for name, command in (("remote", "is in remote control"),
+                                          ("robot_mode", "robotmode"),
+                                          ("safety", "safetystatus"),
+                                          ("program", "programState"),
+                                          ("serial", "get serial number")):
+                        try:
+                            connection.sendall((command + "\n").encode("ascii"))
+                            diagnostics[name] = connection.recv(512).decode("utf-8", errors="replace").strip()
+                        except (OSError, TimeoutError):
+                            diagnostics[name] = "Non disponibile"
+                            break
+                for name, port in (("rtde_port", 30004), ("script_port", 30002)):
+                    try:
+                        with socket.create_connection((address, port), timeout=0.5):
+                            diagnostics[name] = True
+                    except OSError:
+                        pass
+            except OSError as error:
+                diagnostics["detail"] = str(error)
+            with self.lock:
+                if self.robot_ip == address:
+                    self.robot_diagnostics = diagnostics
+            self.stop_event.wait(5)
 
     def _process_frame(self, raw, image):
         now = time.monotonic()
@@ -375,7 +602,8 @@ class VisionDashboard:
                 self.detail = "60 s di tentativi conclusi; stabilizza il BOOX e premi Riloca"
         else:
             try:
-                self.latest_warp = self.tracker.update(image)
+                raw_warp = self.tracker.update(image)
+                self.latest_warp = self._correct_warp(image, raw_warp)
                 self.status = "Scacchiera agganciata"
             except BoardTrackingError as error:
                 self.tracking_paused = True
@@ -386,8 +614,8 @@ class VisionDashboard:
                 self.detail = f"{error} Attendo il refresh; primo tentativo tra 5 s"
 
         if self.latest_warp is not None and not self.tracking_paused:
-            self._analyze_move(self.latest_warp)
             self.latest_median_view, self.latest_board_view = self.view_filter.process(self.latest_warp)
+            self._analyze_move(self.latest_board_view)
 
         raw_display = self._draw_raw(raw)
         board_display = self._draw_board()
@@ -409,6 +637,7 @@ class VisionDashboard:
             self.baseline = warped.copy()
             return
         scores, background, changed = changed_square_scores(self.baseline, warped)
+        self.change_scores = scores
         self.background = background
         # A single legal move changes 2-4 squares. E-ink full-page updates can
         # alter many occupied squares at once; never paint those as a move.
@@ -446,6 +675,29 @@ class VisionDashboard:
             self.last_candidate = None
             self.candidate_seen = 0
             return
+        if self.board.turn:
+            # Robot moves are confirmed explicitly, so keep the reference fresh
+            # while waiting; transient e-ink artefacts are not player moves.
+            self.baseline = warped.copy()
+            self.changed = []
+            self.change_scores.fill(0)
+            self.detail = "Turno del braccio: in attesa della mossa Stockfish"
+            self.candidate = None
+            self.last_candidate = None
+            self.candidate_seen = 0
+            return
+        relevant = legal_move_squares(self.board)
+        ignored = [square for square in changed if square not in relevant]
+        if ignored:
+            checked = warped.copy()
+            for square in ignored:
+                col = chess.square_file(square)
+                row = 7 - chess.square_rank(square)
+                checked[row*100:(row+1)*100, col*100:(col+1)*100] = self.baseline[row*100:(row+1)*100, col*100:(col+1)*100]
+            changed = [square for square in changed if square in relevant]
+            self.changed = changed
+        else:
+            checked = warped
         if not 2 <= len(changed) <= 4:
             self.detail = "In attesa di una mossa completa" if len(changed) < 2 else "Aggiornamento esteso: caselle non evidenziate; usa Nuovo riferimento se la posizione è corretta"
             self.candidate = None
@@ -453,7 +705,7 @@ class VisionDashboard:
             self.candidate_seen = 0
             return
         try:
-            options = infer_human_move(self.baseline, warped, BOXES, self.board)
+            options = infer_human_move(self.baseline, checked, BOXES, self.board)
             if len(options) != 1:
                 raise MoveDetectionError("Promozione: scegli il pezzo prima di confermare")
             move = options[0]
@@ -575,16 +827,19 @@ def make_handler(dashboard):
                     raise ValueError("Invalid body length")
                 payload = json.loads(self.rfile.read(length))
                 self._send(200, "application/json", json.dumps(dashboard.command(payload)).encode())
-            except (ValueError, json.JSONDecodeError) as error:
+            except (ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
                 self._send(400, "text/plain", str(error).encode())
 
         def _send(self, status, content_type, body):
-            self.send_response(status)
-            self.send_header("Content-Type", content_type)
-            self.send_header("Content-Length", str(len(body)))
-            self.send_header("Cache-Control", "no-store")
-            self.end_headers()
-            self.wfile.write(body)
+            try:
+                self.send_response(status)
+                self.send_header("Content-Type", content_type)
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+                pass
 
         @staticmethod
         def _encode(image):
