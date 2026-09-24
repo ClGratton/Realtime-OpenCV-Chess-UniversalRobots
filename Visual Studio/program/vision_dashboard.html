@@ -34,6 +34,9 @@
     .tabs { display: flex; gap: 5px; background: #0d1821; border-radius: 12px; padding: 4px; }
     .tabs button { border: 0; background: transparent; padding: 8px 12px; white-space: nowrap; }
     .tabs button.selected { background: #2b6254; }
+    .steps { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 12px; }
+    .steps button { font-size: 13px; padding: 7px 10px; border-radius: 9px; }
+    .steps[hidden] { display: none; }
     .counter { color: var(--muted); font-size: 13px; text-align: right; }
     .video-wrap { display: flex; justify-content: center; align-items: center; overflow: hidden; border-radius: 12px; background: #070c10; min-height: 480px; height: min(68vh, 830px); position: relative; }
     .video-wrap img { width: 100%; height: 100%; object-fit: contain; }
@@ -73,6 +76,12 @@
           <div class="tabs" aria-label="Vista video"><button id="raw-tab" onclick="setView('raw')">Telecamera originale</button><button id="board-tab" onclick="setView('board')">Prospettiva corretta</button></div>
           <div id="counter" class="counter">Fotogramma — · — fps</div>
         </div>
+        <div id="steps" class="steps" aria-label="Passaggi della correzione dell'immagine">
+          <button class="step" data-step="geometry" onclick="setStage('geometry')">1 · Prospettiva</button>
+          <button class="step" data-step="median" onclick="setStage('median')">2 · + mediana</button>
+          <button class="step" data-step="contrast" onclick="setStage('contrast')">3 · + contrasto</button>
+          <button class="step" data-step="debug" onclick="setStage('debug')">4 · + diagnostica</button>
+        </div>
         <div class="video-wrap"><img id="feed" alt="Video live della scacchiera dal telefono"></div>
         <div class="video-caption"><span id="view-help">I numeri indicano i quattro angoli trovati dalla camera.</span><span id="robot">Robot: disabilitato</span></div>
       </section>
@@ -92,6 +101,7 @@
           <div class="row"><span>Possibili cambiamenti</span><strong id="changed">Nessuno</strong></div>
           <div class="row"><span>Movimento diffuso</span><strong id="background">0%</strong></div>
           <p id="detail" class="muted" style="margin-top:12px">Attendo la camera...</p>
+          <p id="reference-note" class="warning" style="margin-top:10px" hidden>Il riferimento visivo è stato ricreato dopo un cambiamento esteso. Verifica che la posizione FEN corrisponda alla scacchiera.</p>
         </section>
 
         <section class="card">
@@ -119,6 +129,7 @@
   </div>
   <script>
     let view = 'board';
+    let stage = 'debug';
     let latestFen = '';
     let serverDisconnected = false;
     let reconnectTimer = null;
@@ -127,7 +138,8 @@
     function restartFeed() {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
-      $('feed').src = '/stream/' + view + '?t=' + Date.now();
+      const path = view === 'raw' ? '/stream/raw' : stage === 'debug' ? '/stream/board' : '/stream/board/' + stage;
+      $('feed').src = path + '?t=' + Date.now();
     }
 
     $('feed').addEventListener('error', () => {
@@ -140,9 +152,36 @@
       restartFeed();
       $('raw-tab').classList.toggle('selected', next === 'raw');
       $('board-tab').classList.toggle('selected', next === 'board');
-      $('view-help').textContent = next === 'raw'
+      updateStageUI();
+    }
+
+    function setStage(next) {
+      if (!['geometry', 'median', 'contrast', 'debug'].includes(next)) return;
+      if (stage === next && view === 'board') return;
+      stage = next;
+      view = 'board';
+      restartFeed();
+      $('raw-tab').classList.remove('selected');
+      $('board-tab').classList.add('selected');
+      updateStageUI();
+    }
+
+    function updateStageUI() {
+      $('steps').hidden = view === 'raw';
+      document.querySelectorAll('.step').forEach(b => {
+        const selected = view === 'board' && b.dataset.step === stage;
+        b.classList.toggle('selected', selected);
+        b.setAttribute('aria-pressed', String(selected));
+      });
+      const descriptions = {
+        geometry: '1 · La prospettiva viene raddrizzata e la scacchiera resta ferma nella stessa posizione del video.',
+        median: '2 · Mediana mobile di 3 frame già allineati: elimina disturbi che compaiono in un solo fotogramma.',
+        contrast: '3 · CLAHE aumenta con moderazione il contrasto locale; osserva meglio pezzi e caselle.',
+        debug: '4 · Analisi completa: griglia verde, arancione per mosse legali stabili, blu Stockfish e verde mossa letta.'
+      };
+      $('view-help').textContent = view === 'raw'
         ? 'Contorno verde = scacchiera trovata. Il cerchio giallo è l’angolo a8 selezionato.'
-        : 'Allineamento live, mediana di 3 frame e contrasto locale. Arancione = mossa legale stabile; blu = Stockfish; verde = mossa letta.';
+        : descriptions[stage];
     }
 
     async function action(name, extra = {}) {
@@ -173,6 +212,7 @@
         $('background').textContent = `${Math.round(s.background_change * 100)}%`;
         $('detail').textContent = s.detail;
         $('detail').className = s.tracked ? 'muted' : 'warning';
+        $('reference-note').hidden = !s.reference_warning;
         $('planned').textContent = s.planned_san || '—';
         $('planned').classList.toggle('unknown', !s.planned_san);
         $('planned-detail').textContent = s.planned_uci ? `${s.planned_uci} · Turno ${s.turn} · analisi su FEN` : (s.engine_error || 'In attesa della mossa del motore');

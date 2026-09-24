@@ -32,8 +32,9 @@ class VisionDashboardTests(unittest.TestCase):
         video_filter = BoardViewFilter()
         video_filter.process(steady)
         video_filter.process(noisy)
-        filtered = video_filter.process(steady)
-        expected = BoardViewFilter().process(steady)
+        median, filtered = video_filter.process(steady)
+        expected_median, expected = BoardViewFilter().process(steady)
+        np.testing.assert_array_equal(median, expected_median)
         np.testing.assert_array_equal(filtered, expected)
 
     def test_display_filter_updates_after_two_changed_frames(self):
@@ -44,8 +45,9 @@ class VisionDashboardTests(unittest.TestCase):
         video_filter.process(old)
         video_filter.process(old)
         video_filter.process(new)
-        filtered = video_filter.process(new)
-        expected = BoardViewFilter().process(new)
+        median, filtered = video_filter.process(new)
+        expected_median, expected = BoardViewFilter().process(new)
+        np.testing.assert_array_equal(median, expected_median)
         np.testing.assert_array_equal(filtered, expected)
 
     @patch("vision_dashboard.detect_board_corners", return_value=CORNERS)
@@ -74,6 +76,29 @@ class VisionDashboardTests(unittest.TestCase):
         self.assertEqual(dashboard.changed, [])
         self.assertIsNone(dashboard.candidate)
         self.assertIn("Molte caselle", dashboard.detail)
+
+    def test_stable_full_screen_change_rebuilds_visual_reference(self):
+        dashboard = VisionDashboard("test")
+        dashboard.orientation_confirmed = True
+        dashboard.baseline = np.zeros((800, 800, 3), dtype=np.uint8)
+        changed = np.full((800, 800, 3), 200, dtype=np.uint8)
+        with patch("vision_dashboard.time.monotonic", side_effect=[100.0, 103.0]):
+            dashboard._analyze_move(changed)
+            self.assertFalse(dashboard.reference_warning)
+            dashboard._analyze_move(changed)
+        np.testing.assert_array_equal(dashboard.baseline, changed)
+        self.assertTrue(dashboard.reference_warning)
+        self.assertEqual(dashboard.changed, [])
+
+    def test_unstable_full_screen_change_does_not_rebuild_reference(self):
+        dashboard = VisionDashboard("test")
+        dashboard.orientation_confirmed = True
+        dashboard.baseline = np.zeros((800, 800, 3), dtype=np.uint8)
+        with patch("vision_dashboard.time.monotonic", side_effect=[100.0, 103.0]):
+            dashboard._analyze_move(np.full((800, 800, 3), 120, dtype=np.uint8))
+            dashboard._analyze_move(np.full((800, 800, 3), 255, dtype=np.uint8))
+        self.assertFalse(dashboard.reference_warning)
+        self.assertEqual(int(dashboard.baseline.max()), 0)
 
     def test_unmatched_changes_are_not_painted_as_a_move(self):
         dashboard = VisionDashboard("test")

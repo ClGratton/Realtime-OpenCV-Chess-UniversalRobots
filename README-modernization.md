@@ -73,14 +73,20 @@ The perspective view is aligned by the board tracker, uses a rolling three
 frame median to suppress isolated video noise, and gently enhances luminance
 with CLAHE. Move detection still uses the unfiltered warped frames so the
 visual treatment does not alter its decision thresholds.
+In the perspective tab, buttons 1-4 reveal each cumulative stage: geometry,
+geometry plus temporal median, geometry plus median and contrast, then the
+complete diagnostic overlay. Selecting a stage changes only the presentation;
+the backend keeps running its complete analysis on every frame.
 Possible square changes remain visible as text for debugging; orange overlays
 appear only once the change matches a stable legal move.
 The move and FEN controls update this display's game state; they do not move
 the robot. The dashboard never connects to the robot.
 
 During a BOOX full-page refresh, tracking pauses and retries locating the
-board every five seconds for up to one minute. A successful relock spends two
+board every five seconds for up to one minute. A successful relock spends five
 seconds rebuilding its visual reference while the screen settles. Broad screen
-changes are suppressed instead of highlighted as chess moves. If the board is
+changes are suppressed instead of highlighted as chess moves. If a broad
+change then remains still for two seconds, the display rebuilds its reference
+and reminds the operator to verify the FEN. If the board is
 still lost after one minute, stabilize the view and click `Riloca scacchiera`.
 The browser video reconnects after a temporary dashboard server interruption.

@@ -97,7 +97,7 @@ class BoardViewFilter:
         improved = self.clahe.apply(luminance)
         lab = cv2.merge((cv2.addWeighted(luminance, 0.55, improved, 0.45, 0),
                          channel_a, channel_b))
-        return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+        return stable, cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
 
 
 class VisionDashboard:
@@ -113,8 +113,12 @@ class VisionDashboard:
         self.recovery_started = None
         self.next_recovery_at = None
         self.settle_until = 0.0
+        self.broad_change_since = None
+        self.broad_last_view = None
+        self.reference_warning = False
         self.baseline = None
         self.latest_warp = None
+        self.latest_median_view = None
         self.latest_board_view = None
         self.view_filter = BoardViewFilter()
         self.board = chess.Board()
@@ -167,6 +171,7 @@ class VisionDashboard:
                 "orientation": self.orientation + 1,
                 "orientation_confirmed": self.orientation_confirmed,
                 "reference_ready": self.baseline is not None,
+                "reference_warning": self.reference_warning,
                 "changed_squares": [chess.square_name(sq) for sq in self.changed],
                 "background_change": round(self.background, 3),
                 "candidate_uci": candidate.uci() if candidate else None,
@@ -202,12 +207,14 @@ class VisionDashboard:
                         raise ValueError("Scacchiera non agganciata")
                     self.baseline = self.latest_warp.copy()
                     self._clear_candidate()
+                    self.reference_warning = False
                     self.detail = "Nuovo fotogramma di riferimento acquisito"
                 elif kind == "new_game":
                     self.board = chess.Board()
                     self.last_move = None
                     self.baseline = self.latest_warp.copy() if self.latest_warp is not None else None
                     self._clear_candidate()
+                    self.reference_warning = False
                     self._invalidate_engine()
                 elif kind == "fen":
                     board = chess.Board(str(payload["fen"]).strip())
@@ -217,6 +224,7 @@ class VisionDashboard:
                     self.last_move = None
                     self.baseline = self.latest_warp.copy() if self.latest_warp is not None else None
                     self._clear_candidate()
+                    self.reference_warning = False
                     self._invalidate_engine()
                 elif kind == "confirm_candidate":
                     if self.candidate is None or self.candidate not in self.board.legal_moves:
@@ -259,14 +267,17 @@ class VisionDashboard:
         oriented = orient_corners(corners, self.orientation)
         self.latest_warp = self.tracker.initialize(image, oriented)
         self.view_filter.reset()
+        self.latest_median_view = None
         self.latest_board_view = None
         self.tracking_paused = False
         self.recovery_started = None
         self.next_recovery_at = None
         # E-ink refresh can leave a partially drawn board for a moment. Keep
         # updating the reference during this short settling period.
-        self.settle_until = time.monotonic() + 2.0
+        self.settle_until = time.monotonic() + 5.0
         self.baseline = self.latest_warp.copy()
+        self.broad_change_since = None
+        self.broad_last_view = None
         self._clear_candidate()
         self.status = "Scacchiera agganciata"
         self.detail = "Angoli rilevati automaticamente; riferimento aggiornato"
@@ -376,7 +387,7 @@ class VisionDashboard:
 
         if self.latest_warp is not None and not self.tracking_paused:
             self._analyze_move(self.latest_warp)
-            self.latest_board_view = self.view_filter.process(self.latest_warp)
+            self.latest_median_view, self.latest_board_view = self.view_filter.process(self.latest_warp)
 
         raw_display = self._draw_raw(raw)
         board_display = self._draw_board()
@@ -385,9 +396,12 @@ class VisionDashboard:
         self.condition.notify_all()
 
     def _analyze_move(self, warped):
-        if time.monotonic() < self.settle_until:
+        now = time.monotonic()
+        if now < self.settle_until:
             self.baseline = warped.copy()
             self._clear_candidate()
+            self.broad_change_since = None
+            self.broad_last_view = None
             self.background = 0.0
             self.detail = "Il BOOX si sta stabilizzando; il riferimento viene aggiornato"
             return
@@ -400,6 +414,28 @@ class VisionDashboard:
         # alter many occupied squares at once; never paint those as a move.
         self.changed = changed if background <= 0.08 and len(changed) <= 4 else []
         self.highlighted = []
+        if background > 0.08 or len(changed) > 4:
+            if self.broad_change_since is None:
+                self.broad_change_since = now
+            elif self.broad_last_view is not None:
+                frame_delta = cv2.absdiff(
+                    cv2.cvtColor(self.broad_last_view, cv2.COLOR_BGR2GRAY),
+                    cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY),
+                )
+                if float(np.mean(frame_delta > 12)) > 0.05:
+                    self.broad_change_since = now
+                elif now - self.broad_change_since >= 2.0:
+                    self.baseline = warped.copy()
+                    self._clear_candidate()
+                    self.broad_change_since = None
+                    self.broad_last_view = None
+                    self.reference_warning = True
+                    self.detail = "Riferimento aggiornato dopo il refresh; verifica la posizione FEN"
+                    return
+            self.broad_last_view = warped.copy()
+        else:
+            self.broad_change_since = None
+            self.broad_last_view = None
         if not self.orientation_confirmed:
             self.detail = "Conferma quale angolo della camera è a8 per leggere le mosse"
             self._clear_candidate()
@@ -487,6 +523,11 @@ class VisionDashboard:
 
 def make_handler(dashboard):
     html = (ROOT / "vision_dashboard.html").read_bytes()
+    stage_views = {
+        "geometry": "latest_warp",
+        "median": "latest_median_view",
+        "contrast": "latest_board_view",
+    }
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, format_string, *args):
@@ -499,15 +540,28 @@ def make_handler(dashboard):
                 self._send(200, "text/html; charset=utf-8", html)
             elif path == "/api/state":
                 self._send(200, "application/json", json.dumps(dashboard.snapshot()).encode())
-            elif path == "/frame/raw.jpg" or path == "/frame/board.jpg":
+            elif path in ("/frame/raw.jpg", "/frame/board.jpg"):
                 with dashboard.lock:
                     data = dashboard.raw_jpeg if "raw" in path else dashboard.board_jpeg
                 if data is None:
                     self._send(503, "text/plain", b"Waiting for camera")
                 else:
                     self._send(200, "image/jpeg", data)
+            elif path.startswith("/frame/board/") and path.endswith(".jpg"):
+                stage = path.removeprefix("/frame/board/").removesuffix(".jpg")
+                if stage not in stage_views:
+                    self._send(404, "text/plain", b"Unknown stage")
+                    return
+                with dashboard.lock:
+                    image = getattr(dashboard, stage_views[stage])
+                if image is None:
+                    self._send(503, "text/plain", b"Waiting for board")
+                else:
+                    self._send(200, "image/jpeg", self._encode(image))
             elif path in ("/stream/raw", "/stream/board"):
                 self._stream("raw" if path.endswith("raw") else "board")
+            elif path.startswith("/stream/board/") and path.removeprefix("/stream/board/") in stage_views:
+                self._stream(path.removeprefix("/stream/board/"))
             else:
                 self._send(404, "text/plain", b"Not found")
 
@@ -532,6 +586,10 @@ def make_handler(dashboard):
             self.end_headers()
             self.wfile.write(body)
 
+        @staticmethod
+        def _encode(image):
+            return cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 86])[1].tobytes()
+
         def _stream(self, which):
             self.send_response(200)
             self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=frame")
@@ -545,7 +603,10 @@ def make_handler(dashboard):
                             lambda: dashboard.frame_number != seen or dashboard.stop_event.is_set(), 5
                         )
                         seen = dashboard.frame_number
-                        data = dashboard.raw_jpeg if which == "raw" else dashboard.board_jpeg
+                        data = dashboard.raw_jpeg if which == "raw" else dashboard.board_jpeg if which == "board" else None
+                        image = getattr(dashboard, stage_views[which]) if which in stage_views else None
+                    if image is not None:
+                        data = self._encode(image)
                     if data is None:
                         continue
                     self.wfile.write(b"--frame\r\nContent-Type: image/jpeg\r\nContent-Length: "
