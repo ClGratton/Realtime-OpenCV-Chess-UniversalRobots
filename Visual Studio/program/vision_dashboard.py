@@ -23,6 +23,10 @@ import chess
 import chess.engine
 import cv2
 import numpy as np
+try:
+    import rtde.rtde as ur_rtde
+except ImportError:
+    ur_rtde = None
 
 from config import camera_ip, robot_ip
 from image_methods.board_tracker import BoardTracker, BoardTrackingError
@@ -189,7 +193,22 @@ class VisionDashboard:
         self.url = url
         self.robot_ip = robot_ip
         self.robot_diagnostics = {"connection": "Verifica in corso"}
-        self.calibration = load_calibration()
+        try:
+            self.calibration = load_calibration()
+            self.calibration_error = None
+        except (ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
+            self.calibration = None
+            self.calibration_error = str(error)
+        self.calibration_draft = {slot: self.calibration[slot].copy() for slot in ("a8", "h8", "a1", "tray")} if self.calibration and self.calibration["robot_ip"] == self.robot_ip else {}
+        self.draft_serial = self.calibration["serial"] if self.calibration_draft else None
+        self.draft_tcp_offset = self.calibration["tcp_offset"].copy() if self.calibration_draft else None
+        self.draft_dirty = False
+        self.robot_pose = None
+        self.tcp_offset = None
+        self.robot_speed = None
+        self.robot_pose_at = None
+        self.pose_stationary_since = None
+        self.robot_pose_error = "Lettura RTDE in avvio"
         self.lock = threading.RLock()
         self.condition = threading.Condition(self.lock)
         self.commands = deque()
@@ -240,6 +259,31 @@ class VisionDashboard:
         threading.Thread(target=self._camera_loop, name="camera", daemon=True).start()
         threading.Thread(target=self._engine_loop, name="stockfish", daemon=True).start()
         threading.Thread(target=self._robot_status_loop, name="robot-readonly", daemon=True).start()
+        threading.Thread(target=self._robot_pose_loop, name="tcp-pose-readonly", daemon=True).start()
+
+    def _teach_gate(self):
+        diagnostics = self.robot_diagnostics
+        if time.monotonic() - diagnostics.get("checked_at", 0) > 8:
+            return "Stato controller non aggiornato"
+        if diagnostics.get("connection") != "Controller raggiungibile":
+            return "Controller non raggiungibile"
+        if diagnostics.get("remote") != "false":
+            return "Passa a Locale/Manuale sul pendant: Freedrive è disabilitato in Remoto"
+        if diagnostics.get("robot_mode") != "Robotmode: RUNNING":
+            return "Il robot deve essere acceso con freni rilasciati"
+        if diagnostics.get("safety") not in ("Safetystatus: NORMAL", "Safetystatus: REDUCED"):
+            return "Stato di sicurezza non idoneo all'insegnamento"
+        if not str(diagnostics.get("program", "")).upper().startswith("STOPPED"):
+            return "Ferma il programma prima di insegnare posizioni"
+        if not str(diagnostics.get("serial", "")).isdigit():
+            return "Seriale controller non disponibile"
+        if self.robot_pose is None or self.robot_speed is None or self.robot_pose_at is None or time.monotonic() - self.robot_pose_at > 1:
+            return "Posa TCP non disponibile o non aggiornata"
+        if self.tcp_offset is None or np.linalg.norm(self.tcp_offset[:3]) < 0.005:
+            return "Configura sul pendant il TCP sulla punta della pinza"
+        if self.pose_stationary_since is None or time.monotonic() - self.pose_stationary_since < 0.4:
+            return "Rilascia Freedrive e attendi che il braccio sia fermo"
+        return None
 
     def _save_settings(self):
         SETTINGS_FILE.write_text(json.dumps({
@@ -268,6 +312,15 @@ class VisionDashboard:
                     self.latest_board_view = None
                     self.baseline = None
                     self._clear_candidate()
+                if self.robot_ip != address:
+                    self.robot_pose = None
+                    self.tcp_offset = None
+                    self.robot_pose_at = None
+                    self.pose_stationary_since = None
+                    self.calibration_draft = {}
+                    self.draft_serial = None
+                    self.draft_tcp_offset = None
+                    self.draft_dirty = False
                 self.robot_ip = address
                 self.robot_diagnostics = {"connection": "Verifica in corso"}
                 self._save_settings()
@@ -281,10 +334,40 @@ class VisionDashboard:
                 self.detail = "Filtri di visione aggiornati; riferimento in ricostruzione"
                 return {"ok": True}
             if kind == "calibration":
-                self.calibration = save_calibration(payload["positions"])
+                if not self.draft_dirty:
+                    raise ValueError("Acquisisci almeno una posa dal braccio prima di salvare")
+                if not all(slot in self.calibration_draft for slot in ("a8", "h8", "a1", "tray")):
+                    raise ValueError("Acquisisci a8, h8, a1 e vassoio")
+                if self.draft_serial != self.robot_diagnostics.get("serial"):
+                    raise ValueError("Il seriale del controller è cambiato")
+                if self.draft_tcp_offset is None or self.tcp_offset is None or not np.allclose(self.draft_tcp_offset, self.tcp_offset, atol=0.002):
+                    raise ValueError("Il TCP è cambiato durante la calibrazione")
+                self.calibration = save_calibration({**self.calibration_draft,
+                    "robot_ip": self.robot_ip, "serial": self.draft_serial,
+                    "tcp_offset": self.draft_tcp_offset})
+                self.calibration_error = None
+                self.draft_dirty = False
                 return {"ok": True}
+            if kind == "capture_pose":
+                if payload.get("tip_confirmed") is not True:
+                    raise ValueError("Conferma che il TCP attivo è sulla punta della pinza")
+                slot = payload.get("slot")
+                if slot not in ("a8", "h8", "a1", "tray"):
+                    raise ValueError("Punto di calibrazione sconosciuto")
+                reason = self._teach_gate()
+                if reason:
+                    raise ValueError(reason)
+                serial = self.robot_diagnostics["serial"]
+                if self.draft_serial != serial or self.draft_tcp_offset is None or not np.allclose(self.draft_tcp_offset, self.tcp_offset, atol=0.002):
+                    self.calibration_draft = {}
+                self.draft_serial = serial
+                self.draft_tcp_offset = self.tcp_offset.copy()
+                count = 3 if slot == "tray" else 6
+                self.calibration_draft[slot] = [round(float(value), 6) for value in self.robot_pose[:count]]
+                self.draft_dirty = True
+                return {"ok": True, "slot": slot, "pose": self.calibration_draft[slot]}
             if kind == "connect_robot":
-                if self.calibration is None:
+                if self.calibration is None or self.calibration["robot_ip"] != self.robot_ip:
                     raise ValueError("Collegamento rifiutato: posizioni del robot non calibrate")
                 raise ValueError("Il pannello visione non invia comandi al robot")
             self.commands.append(payload)
@@ -296,6 +379,7 @@ class VisionDashboard:
             proposed = self.planned_move
             candidate = self.candidate
             age = round(time.monotonic() - self.last_frame_at, 1) if self.last_frame_at else None
+            teach_reason = self._teach_gate()
             return {
                 "camera_url": self.url,
                 "status": self.status,
@@ -332,8 +416,17 @@ class VisionDashboard:
                 "robot": "Disabilitato: sola visione",
                 "robot_ip": self.robot_ip,
                 "robot_diagnostics": self.robot_diagnostics.copy(),
-                "calibration_ready": self.calibration is not None,
+                "robot_pose": self.robot_pose.copy() if self.robot_pose is not None else None,
+                "tcp_offset": self.tcp_offset.copy() if self.tcp_offset is not None else None,
+                "robot_pose_age": round(time.monotonic() - self.robot_pose_at, 2) if self.robot_pose_at else None,
+                "robot_pose_error": self.robot_pose_error,
+                "teach_ready": teach_reason is None,
+                "teach_reason": teach_reason,
+                "calibration_ready": self.calibration is not None and self.calibration["robot_ip"] == self.robot_ip and self.calibration["serial"] == self.robot_diagnostics.get("serial") and self.tcp_offset is not None and np.allclose(self.calibration["tcp_offset"], self.tcp_offset, atol=0.002),
                 "calibration": self.calibration,
+                "calibration_error": self.calibration_error,
+                "calibration_draft": self.calibration_draft.copy(),
+                "calibration_draft_dirty": self.draft_dirty,
                 "view_window": self.view_filter.window,
                 "view_contrast": self.view_filter.contrast,
             }
@@ -546,6 +639,7 @@ class VisionDashboard:
                     diagnostics["dashboard_port"] = True
                     diagnostics["connection"] = "Controller raggiungibile"
                     for name, command in (("remote", "is in remote control"),
+                                          ("operation_mode", "get operational mode"),
                                           ("robot_mode", "robotmode"),
                                           ("safety", "safetystatus"),
                                           ("program", "programState"),
@@ -566,8 +660,59 @@ class VisionDashboard:
                 diagnostics["detail"] = str(error)
             with self.lock:
                 if self.robot_ip == address:
+                    diagnostics["checked_at"] = time.monotonic()
                     self.robot_diagnostics = diagnostics
             self.stop_event.wait(5)
+
+    def _robot_pose_loop(self):
+        if ur_rtde is None:
+            with self.lock:
+                self.robot_pose_error = "Installa la libreria RTDE ufficiale (requirements.txt)"
+            return
+        while not self.stop_event.is_set():
+            with self.lock:
+                address = self.robot_ip
+            connection = None
+            try:
+                connection = ur_rtde.RTDE(address, 30004)
+                connection.connect()
+                if not connection.send_output_setup(
+                    ["timestamp", "actual_TCP_pose", "actual_TCP_speed", "tcp_offset"],
+                    ["DOUBLE", "VECTOR6D", "VECTOR6D", "VECTOR6D"], frequency=10
+                ) or not connection.send_start():
+                    raise RuntimeError("Ricetta RTDE TCP rifiutata dal controller")
+                while not self.stop_event.is_set() and self.robot_ip == address:
+                    sample = connection.receive()
+                    if sample is None:
+                        raise RuntimeError("Flusso RTDE interrotto")
+                    with self.lock:
+                        self.robot_pose = [float(value) for value in sample.actual_TCP_pose]
+                        self.tcp_offset = [float(value) for value in sample.tcp_offset]
+                        self.robot_speed = [float(value) for value in sample.actual_TCP_speed]
+                        now = time.monotonic()
+                        self.robot_pose_at = now
+                        stationary = (np.linalg.norm(self.robot_speed[:3]) <= 0.005
+                                      and np.linalg.norm(self.robot_speed[3:]) <= 0.05)
+                        if stationary:
+                            self.pose_stationary_since = self.pose_stationary_since or now
+                        else:
+                            self.pose_stationary_since = None
+                        self.robot_pose_error = None
+            except Exception as error:
+                with self.lock:
+                    if self.robot_ip == address:
+                        self.robot_pose = None
+                        self.tcp_offset = None
+                        self.robot_pose_at = None
+                        self.pose_stationary_since = None
+                        self.robot_pose_error = str(error)
+            finally:
+                if connection is not None:
+                    try:
+                        connection.disconnect()
+                    except OSError:
+                        pass
+            self.stop_event.wait(1)
 
     def _process_frame(self, raw, image):
         now = time.monotonic()

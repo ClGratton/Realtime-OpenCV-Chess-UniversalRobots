@@ -22,7 +22,7 @@ from arm_methods.calculatePosition import calculatePosition
 from arm_methods.movePiece import movePiece
 from config import camera_ip, robot_ip, robotExists, debug, time_limit, eaten_position, checkboard_coord_start, checkboard_coord_end
 from arm_methods.getPieceOffset import getPieceOffset
-from robot_calibration import load_calibration
+from robot_calibration import require_calibration_for_robot
 
 
 _camera = None
@@ -557,9 +557,8 @@ main_checkboard_coord_end = list(checkboard_coord_end)
 main_checkboard_coord_a1 = None
 main_eaten_position = list(eaten_position)
 if robotExists:
-    calibration = load_calibration()
-    if calibration is None:
-        raise RuntimeError("Calibra a8, h8, a1 e vassoio prima di collegare il robot")
+    calibration = require_calibration_for_robot(robot_ip)
+    calibrated_serial = calibration["serial"]
     main_checkboard_coord_start = calibration["a8"]
     main_checkboard_coord_end = calibration["h8"]
     main_checkboard_coord_a1 = calibration["a1"]
@@ -574,13 +573,14 @@ while not board.is_game_over(claim_draw=True):
     if robotExists:
         # A revised calibration takes effect at the next turn, before any
         # motion. Missing or invalid data stops the game before moving.
-        calibration = load_calibration()
-        if calibration is None:
-            raise RuntimeError("Calibrazione rimossa: fermo il gioco prima del movimento")
+        calibration = require_calibration_for_robot(robot_ip)
+        if calibration["serial"] != calibrated_serial:
+            raise RuntimeError("Calibrazione rimossa o cambiata per un altro robot: fermo il gioco prima del movimento")
         main_checkboard_coord_start = calibration["a8"]
         main_checkboard_coord_end = calibration["h8"]
         main_checkboard_coord_a1 = calibration["a1"]
         main_eaten_position = calibration["tray"]
+        minimum_board_tcp_z = min(calibration[square][2] for square in ("a8", "h8", "a1"))
 
     ## white turn 
     print("turn:", board.turn)
@@ -642,7 +642,8 @@ while not board.is_game_over(claim_draw=True):
                         "con il braccio attivo."
                     )
                 print('Arm is connected, moving captured piece...')
-                movePiece(robot, captured_position, target_position)
+                movePiece(robot, captured_position, target_position,
+                          minimum_tcp_z=min(minimum_board_tcp_z, main_eaten_position[2]))
             
         print("piece:",piece, "box_1_coordinate:",box_1_coordinate, "box_2_coordinate:",box_2_coordinate)
         initial_position, target_position = calculatePosition(piece, main_checkboard_coord_start, main_checkboard_coord_end, box_1_coordinate, box_2_coordinate, main_checkboard_coord_a1)
@@ -650,7 +651,7 @@ while not board.is_game_over(claim_draw=True):
         
         if robotExists:
             print('Arm is connected, moving selected piece...')
-            movePiece(robot, initial_position, target_position)
+            movePiece(robot, initial_position, target_position, minimum_tcp_z=minimum_board_tcp_z)
             if is_castling:
                 # The board state includes both castling pieces, so move the
                 # rook physically after the king.
@@ -669,7 +670,7 @@ while not board.is_game_over(claim_draw=True):
                     map_position[rook_to],
                     main_checkboard_coord_a1,
                 )
-                movePiece(robot, rook_start, rook_end)
+                movePiece(robot, rook_start, rook_end, minimum_tcp_z=minimum_board_tcp_z)
             if result.move.promotion:
                 promoted = chess.piece_symbol(result.move.promotion).upper()
                 print(f"Replace the pawn on {position2} with {promoted}, then press 'p'.")

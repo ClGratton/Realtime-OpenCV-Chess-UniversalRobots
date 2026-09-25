@@ -2,6 +2,10 @@
 from math import isfinite
 
 from arm_methods.getPieceOffset import getPieceOffset
+from config import rook_offset, knight_offset, bishop_offset, queen_offset, king_offset, pawn_offset
+
+
+LOWEST_PIECE_OFFSET = max(rook_offset, knight_offset, bishop_offset, queen_offset, king_offset, pawn_offset)
 
 
 def calculatePosition(
@@ -46,7 +50,13 @@ def calculatePosition(
             xyz = [start[i] + (end[i] - start[i]) * column / 7.0
                    + (side[i] - start[i]) * row / 7.0 for i in range(3)]
             x, y, z = xyz
-        z -= getPieceOffset(piece)
+        if side is None:
+            z -= getPieceOffset(piece)
+        else:
+            # Taught TCP positions are the lowest permitted gripper-tip height.
+            # A shorter piece uses that height; taller pieces are gripped above it.
+            z = max(z, min(start[2], end[2], side[2]))
+            z += LOWEST_PIECE_OFFSET - getPieceOffset(piece)
         return [x, y, z, *start[3:6]]
 
     return pose_for(initial_check), pose_for(target_check)

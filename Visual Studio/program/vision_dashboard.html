@@ -67,6 +67,8 @@
     dialog h3 { margin: 22px 0 6px; }
     .setting-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
     .setting-head h2 { margin: 0; }
+    .teach-point { border-top: 1px solid var(--line); padding: 12px 0; display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; align-items: center; }
+    .teach-point small { color: var(--muted); grid-column: 1 / -1; overflow-wrap: anywhere; }
     .orientation { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
     .orientation button { min-width: 42px; }
     .footer { color: var(--muted); font-size: 13px; margin-top: 17px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
@@ -150,12 +152,17 @@
     <div class="controls"><button onclick="openCalibration()">Calibra posizioni</button></div>
   </dialog>
   <dialog id="calibration-dialog"><div class="setting-head"><h2>Posizioni del braccio</h2><button onclick="$('calibration-dialog').close()" aria-label="Chiudi">✕</button></div>
-    <p class="muted">Inserisci le pose TCP misurate in base robot: x, y, z in metri e rx, ry, rz in radianti, al centro delle caselle indicate. Usa la stessa altezza di presa e lo stesso orientamento della pinza. Nessun movimento viene eseguito qui.</p>
-    <label for="pose-a8">Centro a8 · 6 valori<input id="pose-a8" placeholder="x, y, z, rx, ry, rz"></label>
-    <label for="pose-h8">Centro h8 · 6 valori<input id="pose-h8" placeholder="x, y, z, rx, ry, rz"></label>
-    <label for="pose-a1">Centro a1 · 6 valori<input id="pose-a1" placeholder="x, y, z, rx, ry, rz"></label>
-    <label for="pose-tray">Vassoio catture · x, y, z<input id="pose-tray" placeholder="x, y, z"></label>
-    <div class="controls"><button onclick="saveCalibration()">Salva calibrazione</button></div>
+    <p class="muted">Sul pendant passa da <strong>Remoto</strong> a <strong>Manuale/Locale</strong> e ferma il programma. Configura il TCP sulla <strong>punta delle pinze</strong> e verifica il payload. Tieni premuto Freedrive, porta la punta al punto più basso consentito, rilasciala e premi Acquisisci. Mantieni la stessa altezza di presa e l’orientamento nei tre centri. Il software non comanderà la punta sotto la quota insegnata.</p>
+    <p id="tcp-offset" class="muted">TCP attivo: in attesa della lettura RTDE</p>
+    <label><input type="checkbox" id="tip-confirm"> Ho verificato sul pendant che il TCP attivo coincide con la punta delle pinze</label>
+    <p id="teach-status" class="warning" style="margin-top:12px">Attendo lo stato del robot...</p>
+    <p id="live-pose" class="muted" style="margin-top:8px">TCP: in attesa della lettura RTDE</p>
+    <div class="teach-point"><strong>Centro a8</strong><button class="capture-pose" data-slot="a8" onclick="capturePose('a8')">Acquisisci a8</button><small id="draft-a8">Non acquisito</small></div>
+    <div class="teach-point"><strong>Centro h8</strong><button class="capture-pose" data-slot="h8" onclick="capturePose('h8')">Acquisisci h8</button><small id="draft-h8">Non acquisito</small></div>
+    <div class="teach-point"><strong>Centro a1</strong><button class="capture-pose" data-slot="a1" onclick="capturePose('a1')">Acquisisci a1</button><small id="draft-a1">Non acquisito</small></div>
+    <div class="teach-point"><strong>Vassoio catture</strong><button class="capture-pose" data-slot="tray" onclick="capturePose('tray')">Acquisisci vassoio</button><small id="draft-tray">Non acquisito</small></div>
+    <div class="controls"><button id="save-calibration" onclick="saveCalibration()">Salva le quattro posizioni</button></div>
+    <p class="muted" style="margin-top:10px">Dopo il salvataggio torna in Remoto per il gioco. La dashboard legge la posa, senza comandare movimenti.</p>
     <p id="calibration-message" class="muted" style="margin-top:12px"></p>
   </dialog>
   <script>
@@ -168,7 +175,6 @@
     let lastRenderedAt = 0;
     let filterTimer = null;
     let settingsLoaded = false;
-    let calibrationLoaded = false;
     const $ = id => document.getElementById(id);
     const frameContext = $('feed').getContext('2d', {alpha:false});
 
@@ -268,20 +274,18 @@
       }); }, 180);
     }
     function openSettings() { $('settings-dialog').showModal(); }
-    function openCalibration() { $('settings-dialog').close(); $('calibration-dialog').showModal(); }
+    function openCalibration() { $('settings-dialog').close(); $('tip-confirm').checked = false; $('calibration-dialog').showModal(); }
     async function saveSettings() {
       const ok = await action('settings', {camera_url:$('camera-setting').value.trim(), robot_ip:$('robot-setting').value.trim()});
       if (ok) $('detail').textContent = 'Indirizzi aggiornati';
     }
-    function parsePose(id) { return $(id).value.split(/[;,\s]+/).filter(Boolean).map(Number); }
+    async function capturePose(slot) {
+      const ok = await action('capture_pose', {slot, tip_confirmed:$('tip-confirm').checked});
+      $('calibration-message').textContent = ok ? `Posa ${slot} acquisita dal controller.` : $('detail').textContent;
+    }
     async function saveCalibration() {
-      const positions = {a8:parsePose('pose-a8'), h8:parsePose('pose-h8'), a1:parsePose('pose-a1'), tray:parsePose('pose-tray')};
-      if ([positions.a8, positions.h8, positions.a1].some(p => p.length !== 6) || positions.tray.length !== 3) {
-        $('calibration-message').textContent = 'Servono 6 valori per ogni casella e 3 per il vassoio.';
-        return;
-      }
-      const ok = await action('calibration', {positions});
-      $('calibration-message').textContent = ok ? 'Posizioni salvate. Prima di usare il braccio verifica fisicamente il percorso e le altezze.' : $('detail').textContent;
+      const ok = await action('calibration');
+      $('calibration-message').textContent = ok ? 'Posizioni salvate per questo controller. Torna in Remoto per il gioco.' : $('detail').textContent;
     }
     function chooseCorner(number) { action('orientation', {corner:number}); }
     function applyFen() { action('fen', {fen:$('fen').value}); }
@@ -309,14 +313,25 @@
         for (const [label, value] of [
           ['Controller', d.connection], ['Dashboard 29999', d.dashboard_port],
           ['RTDE 30004', d.rtde_port], ['Script 30002', d.script_port],
-          ['Controllo remoto', d.remote === 'true' ? 'Attivo' : d.remote === 'false' ? 'Disattivo' : d.remote], ['Modalità robot', d.robot_mode],
+          ['Controllo remoto', d.remote === 'true' ? 'Attivo' : d.remote === 'false' ? 'Disattivo' : d.remote], ['Modo operativo', d.operation_mode], ['Modalità robot', d.robot_mode],
           ['Sicurezza', d.safety], ['Programma', d.program], ['Seriale', d.serial],
           ['Calibrazione posizioni', s.calibration_ready ? 'Salvata' : 'Mancante']
         ]) { const line = document.createElement('div'); line.className = 'row'; const name = document.createElement('span'); name.textContent = label;
           const result = document.createElement('strong'); result.textContent = typeof value === 'boolean' ? (value ? 'Aperta' : 'Chiusa') : (value ?? '—');
           line.append(name, result); $('robot-tests').append(line); }
         if (!settingsLoaded) { $('camera-setting').value = s.camera_url; $('robot-setting').value = s.robot_ip; settingsLoaded = true; }
-        if (!calibrationLoaded && s.calibration) { for (const [key, id] of [['a8','pose-a8'],['h8','pose-h8'],['a1','pose-a1'],['tray','pose-tray']]) $(id).value = s.calibration[key].join(', '); calibrationLoaded = true; }
+        $('teach-status').textContent = s.teach_ready ? 'Manuale attivo e TCP fermo: puoi acquisire il punto.' : s.teach_reason;
+        $('teach-status').className = s.teach_ready ? 'muted' : 'warning';
+        $('live-pose').textContent = s.robot_pose && s.robot_pose_age < 1
+          ? `TCP attuale (m, rad): ${s.robot_pose.map(v => v.toFixed(4)).join(', ')}`
+          : `TCP non disponibile: ${s.robot_pose_error || 'lettura scaduta'}`;
+        $('tcp-offset').textContent = s.tcp_offset ? `TCP attivo rispetto alla flangia (m, rad): ${s.tcp_offset.map(v => v.toFixed(4)).join(', ')}` : 'TCP attivo: non disponibile';
+        for (const slot of ['a8','h8','a1','tray']) {
+          const pose = s.calibration_draft?.[slot];
+          $('draft-' + slot).textContent = pose ? pose.map(v => v.toFixed(4)).join(', ') + (slot === 'tray' ? ' m' : ' · m, rad') : 'Non acquisito';
+        }
+        document.querySelectorAll('.capture-pose').forEach(b => b.disabled = !s.teach_ready || !$('tip-confirm').checked);
+        $('save-calibration').disabled = !s.calibration_draft_dirty || !['a8','h8','a1','tray'].every(slot => s.calibration_draft?.[slot]);
         $('tracked').textContent = s.tracked ? 'Agganciata' : 'In pausa / ricerca';
         $('changed').textContent = s.changed_squares.length ? s.changed_squares.join(', ') : 'Nessuno';
         $('background').textContent = `${Math.round(s.background_change * 100)}%`;

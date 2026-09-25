@@ -2,3 +2,4 @@ python-chess
 opencv-python
 numpy
 urx
+git+https://github.com/UniversalRobots/RTDE_Python_Client_Library.git@29f02eb0d5164b03a0a95dfd4f4f8645be12aa59

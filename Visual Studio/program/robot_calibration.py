@@ -1,9 +1,11 @@
 """Stored board-to-robot positions. Loading this file never connects to the arm."""
 
 import json
+import ipaddress
 from math import isfinite
 import os
 from pathlib import Path
+import socket
 
 import numpy as np
 
@@ -34,7 +36,53 @@ def validate_calibration(data):
     if any(np.linalg.norm(np.asarray(poses[square][3:]) - np.asarray(poses["a8"][3:])) > 0.15
            for square in ("h8", "a1")):
         raise ValueError("L'orientamento della pinza deve essere uguale nei tre punti")
-    return {**poses, "tray": tray}
+    address = str(ipaddress.ip_address(data["robot_ip"]))
+    serial = str(data["serial"]).strip()
+    if not serial.isdigit():
+        raise ValueError("Manca il seriale verificato del controller")
+    tcp_offset = [float(value) for value in data["tcp_offset"]]
+    if len(tcp_offset) != 6 or not all(isfinite(value) for value in tcp_offset) or np.linalg.norm(tcp_offset[:3]) < 0.005:
+        raise ValueError("TCP della punta della pinza non configurato")
+    return {**poses, "tray": tray, "robot_ip": address, "serial": serial,
+            "tcp_offset": tcp_offset}
+
+
+def read_robot_serial(address):
+    """Read only the controller serial via the UR Dashboard Server."""
+    with socket.create_connection((address, 29999), timeout=1.0) as connection:
+        connection.settimeout(1.0)
+        connection.recv(512)
+        connection.sendall(b"get serial number\n")
+        return connection.recv(512).decode("ascii", errors="replace").strip()
+
+
+def read_robot_tcp_offset(address):
+    """Read the controller's active flange-to-TCP transform without commanding motion."""
+    import rtde.rtde as ur_rtde
+    connection = ur_rtde.RTDE(address, 30004)
+    try:
+        connection.connect()
+        if not connection.send_output_setup(["tcp_offset"], ["VECTOR6D"], frequency=10) or not connection.send_start():
+            raise RuntimeError("Il controller non espone il TCP attivo")
+        sample = connection.receive()
+        if sample is None:
+            raise RuntimeError("Lettura del TCP attivo fallita")
+        return [float(value) for value in sample.tcp_offset]
+    finally:
+        connection.disconnect()
+
+
+def require_calibration_for_robot(address):
+    calibration = load_calibration()
+    if calibration is None:
+        raise RuntimeError("Calibra a8, h8, a1 e vassoio prima di collegare il robot")
+    if calibration["robot_ip"] != address:
+        raise RuntimeError("La calibrazione appartiene a un altro IP robot")
+    if read_robot_serial(address) != calibration["serial"]:
+        raise RuntimeError("La calibrazione appartiene a un altro controller")
+    if not np.allclose(read_robot_tcp_offset(address), calibration["tcp_offset"], atol=0.002):
+        raise RuntimeError("Il TCP attivo è cambiato dalla calibrazione della punta")
+    return calibration
 
 
 def load_calibration(path=CALIBRATION_FILE):

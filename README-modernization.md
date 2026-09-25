@@ -46,13 +46,23 @@ Stockfish release separately and set STOCKFISH_PATH to its executable, or add
 it to PATH.
 
 The robot is disabled by default. The ⚙ panel stores the controller IP and
-the camera URL locally. The position dialog stores three six-value TCP poses
-for the centres of a8, h8 and a1, plus the capture tray XYZ, in
-`Visual Studio/program/robot_calibration.json`. Values use metres and radians
-in the UR base frame. `chess_main.py` refuses to connect to the robot when
-these values are missing or implausible, and reloads them at the next turn if
-changed during a game. The three measured centres permit a board rotated in
-the robot's XY plane. Check the actual workspace, tool orientation and travel
+the camera URL locally. For robot position teaching, switch the pendant from
+Remote to Local/Manual, stop the program, hold Freedrive and guide the tool to
+the centre of a8. Release Freedrive and press **Acquisisci a8** in the position
+dialog. Repeat for h8, a1 and the capture tray, then save and return to Remote
+for play. The dashboard reads `actual_TCP_pose` and `actual_TCP_speed` from
+RTDE; it captures only a fresh, stationary pose while the controller reports
+Local, a stopped program and a normal or reduced safety state. It never sends
+Freedrive or jog commands. If hand guiding is inconvenient, use the pendant's
+Move tab in Manual to reach the point before pressing Acquisisci.
+
+The four taught points are stored in
+`Visual Studio/program/robot_calibration.json`, bound to the controller IP and
+serial. Values use metres and radians in the UR base frame. `chess_main.py`
+refuses a robot control connection when calibration is missing, implausible or
+bound to another controller, and reloads positions at the next turn if changed
+during a game. The three measured board centres permit a board rotated in the
+robot's XY plane. Check the actual workspace, tool orientation and travel
 height before setting CHESS_ROBOT_ENABLED=1. Camera calibration does not
 measure robot coordinates, and the board must remain fixed relative to the
 robot until robot-to-board tracking is added.
@@ -92,6 +102,16 @@ robot mode, safety, program and serial, and checks whether the RTDE and script
 ports are reachable. These are read-only checks; the display never sends a
 motion, power, unlock or play command. Saved addresses and filter settings are
 kept in `Visual Studio/program/dashboard_settings.json`.
+Install the pinned official Universal Robots RTDE Python library from
+`requirements.txt` to enable live TCP readings and the Acquisisci buttons.
+In Manual/Local mode, use the pendant Freedrive control to teach the lowest
+permitted gripper-tip position at a8, h8, a1 and the capture tray. Confirm on
+the pendant that the active TCP is set at the gripper tip. The dashboard reads
+the stopped TCP pose and active TCP offset without jogging the robot, then
+saves both with the controller serial. Robot control refuses calibration if
+the controller or TCP offset changes. Pick-and-place commands are checked
+against the taught minimum TCP height before motion, including the return
+home pose; all generated Cartesian waypoints stay above that limit.
 
 During a BOOX full-page refresh, tracking pauses and retries locating the
 board every five seconds for up to one minute. A successful relock spends five
