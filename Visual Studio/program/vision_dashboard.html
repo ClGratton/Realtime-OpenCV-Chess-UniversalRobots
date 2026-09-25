@@ -60,6 +60,7 @@
     .controls { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 12px; }
     .controls button { padding: 8px 11px; }
     input { width: 100%; background: #0d1821; color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; outline: none; }
+    input[type="checkbox"] { width: auto; padding: 0; margin-right: 8px; accent-color: var(--green); }
     input:focus { border-color: var(--green); }
     dialog { width: min(650px, calc(100vw - 26px)); max-height: 88vh; overflow: auto; border: 1px solid var(--line); border-radius: 18px; background: #14202d; color: var(--text); padding: 22px; box-shadow: 0 25px 90px #000b; }
     dialog::backdrop { background: #000a; }
@@ -71,6 +72,12 @@
     .teach-point small { color: var(--muted); grid-column: 1 / -1; overflow-wrap: anywhere; }
     .orientation { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
     .orientation button { min-width: 42px; }
+    .arm-card { display: none; }
+    .arm-mode .layout { grid-template-columns: 1fr; }
+    .arm-mode .stage, .arm-mode .chess-card { display: none; }
+    .arm-mode .arm-card { display: block; width: min(950px, 100%); }
+    .arm-mode .rail { display: block; }
+    .arm-pose { font-size: clamp(23px, 3vw, 36px); font-variant-numeric: tabular-nums; font-weight: 750; color: var(--green); overflow-wrap: anywhere; }
     .footer { color: var(--muted); font-size: 13px; margin-top: 17px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
     @media (max-width: 1060px) { .layout { grid-template-columns: 1fr; } .rail { grid-template-columns: repeat(2, minmax(280px, 1fr)); } .video-wrap { height: min(65vh, 740px); } }
     @media (max-width: 700px) { .page { padding: 13px; } header { align-items: start; flex-direction: column; } .rail { grid-template-columns: 1fr; } .stage-head { flex-direction: column; align-items: stretch; } .video-wrap { min-height: 300px; height: 52vh; } }
@@ -79,8 +86,8 @@
 <body>
   <div class="page">
     <header>
-      <div><div class="eyebrow">Scuole aperte · Laboratorio di robotica</div><h1>Scacchi, vista del computer</h1><p class="subtitle">Quello che la camera vede, quello che il programma riconosce, quello che Stockfish suggerisce.</p></div>
-      <div class="live-status"><span id="dot" class="dot"></span><div><div id="status" class="status-main">Collegamento...</div><div id="age" class="status-sub">Attesa fotogramma</div></div><button type="button" aria-label="Impostazioni" title="Impostazioni" onclick="openSettings()">⚙</button></div>
+      <div><div class="eyebrow">Scuole aperte · Laboratorio di robotica</div><h1 id="page-title">Scacchi, vista del computer</h1><p id="page-subtitle" class="subtitle">Quello che la camera vede, quello che il programma riconosce, quello che Stockfish suggerisce.</p></div>
+      <div class="live-status"><span id="dot" class="dot"></span><div><div id="status" class="status-main">Collegamento...</div><div id="age" class="status-sub">Attesa fotogramma</div></div><button id="mode-button" type="button" onclick="switchMode()">Solo braccio</button><button type="button" aria-label="Impostazioni" title="Impostazioni" onclick="openSettings()">⚙</button></div>
     </header>
 
     <main class="layout">
@@ -101,7 +108,18 @@
       </section>
 
       <aside class="rail">
-        <section class="card hero">
+        <section class="card arm-card">
+          <div class="eyebrow">Braccio UR · sola lettura</div><h1>Calibrazione della punta</h1>
+          <p id="arm-health" class="warning">Verifica controller in corso...</p>
+          <div class="row"><span>Posa TCP attuale</span><strong id="arm-pose" class="arm-pose">—</strong></div>
+          <div class="row"><span>TCP attivo rispetto alla flangia</span><strong id="arm-tcp">—</strong></div>
+          <div class="row"><span>Controllo remoto</span><strong id="arm-remote">—</strong></div>
+          <div class="row"><span>Sicurezza</span><strong id="arm-safety">—</strong></div>
+          <div class="row"><span>Quattro posizioni</span><strong id="arm-cal">—</strong></div>
+          <div class="controls"><button onclick="openCalibration()">Apri calibrazione Freedrive</button><button onclick="openSettings()">Diagnostica e IP</button></div>
+          <p class="muted" style="margin-top:12px">La fotocamera può rimanere spenta. Questa vista legge il controller e non invia movimenti.</p>
+        </section>
+        <section class="card hero chess-card">
           <div id="turn-role" class="turn-badge">Turno in attesa</div>
           <h2 id="planned-heading">Mossa proposta da Stockfish</h2>
           <div id="planned" class="move unknown">—</div>
@@ -111,7 +129,7 @@
           <p id="calibration-status" class="muted" style="margin-top:10px">Calibrazione robot: in attesa</p>
         </section>
 
-        <section class="card">
+        <section class="card chess-card">
           <h2>Cosa vede la camera</h2>
           <div class="row"><span>Scacchiera</span><strong id="tracked">In attesa</strong></div>
           <div class="row"><span>Possibili cambiamenti</span><strong id="changed">Nessuno</strong></div>
@@ -120,14 +138,14 @@
           <p id="reference-note" class="warning" style="margin-top:10px" hidden>Il riferimento visivo è stato ricreato dopo un cambiamento esteso. Verifica che la posizione FEN corrisponda alla scacchiera.</p>
         </section>
 
-        <section class="card">
+        <section class="card chess-card">
           <h2>Mossa letta sulla scacchiera</h2>
           <div id="candidate" class="move-small">—</div>
           <p class="muted">Compare dopo che le caselle cambiate corrispondono a una mossa legale stabile.</p>
           <div class="controls"><button id="confirm-candidate" onclick="action('confirm_candidate')">Conferma mossa letta</button><button onclick="action('reference')">Nuovo riferimento</button></div>
         </section>
 
-        <section class="card">
+        <section class="card chess-card">
           <h2>Controlli della dimostrazione</h2>
           <p class="muted">L'angolo <strong>a8</strong> è quello in alto a sinistra per chi gioca con il Bianco in basso. Scegli il numero visto nel feed originale.</p>
           <div class="orientation"><span>Angolo a8:</span><button class="corner" data-corner="1" onclick="chooseCorner(1)">1</button><button class="corner" data-corner="2" onclick="chooseCorner(2)">2</button><button class="corner" data-corner="3" onclick="chooseCorner(3)">3</button><button class="corner" data-corner="4" onclick="chooseCorner(4)">4</button></div>
@@ -175,8 +193,18 @@
     let lastRenderedAt = 0;
     let filterTimer = null;
     let settingsLoaded = false;
+    let armMode = new URLSearchParams(location.search).get('mode') === 'arm' || localStorage.getItem('dashboard-mode') === 'arm';
     const $ = id => document.getElementById(id);
     const frameContext = $('feed').getContext('2d', {alpha:false});
+    function applyMode() {
+      document.body.classList.toggle('arm-mode', armMode);
+      $('mode-button').textContent = armMode ? 'Vista scacchi' : 'Solo braccio';
+      $('mode-button').classList.toggle('selected', armMode);
+      $('page-title').textContent = armMode ? 'Braccio UR · stato e calibrazione' : 'Scacchi, vista del computer';
+      $('page-subtitle').textContent = armMode ? 'Lettura in tempo reale del TCP e insegnamento delle posizioni con Freedrive.' : 'Quello che la camera vede, quello che il programma riconosce, quello che Stockfish suggerisce.';
+      localStorage.setItem('dashboard-mode', armMode ? 'arm' : 'chess');
+    }
+    function switchMode() { armMode = !armMode; applyMode(); action('camera_mode', {enabled:!armMode}); restartFeed(); refresh(); }
 
     function framePath() {
       return view === 'raw' ? '/frame/raw.jpg'
@@ -190,6 +218,7 @@
     }
 
     async function renderFrame() {
+      if (armMode) { setTimeout(renderFrame, 1000); return; }
       const generation = frameGeneration;
       const abort = new AbortController();
       frameAbort = abort;
@@ -309,6 +338,18 @@
         $('planned-heading').textContent = s.turn_role === 'Braccio' ? 'Mossa proposta per il braccio' : 'Analisi Stockfish';
         $('calibration-status').textContent = s.calibration_ready ? 'Posizioni robot salvate · movimenti disabilitati nel pannello' : 'Posizioni robot mancanti · connessione di controllo bloccata';
         const d = s.robot_diagnostics || {};
+        $('arm-health').textContent = s.teach_ready ? 'Pronto: braccio fermo in Locale/Manuale' : (s.teach_reason || 'In attesa del controller');
+        $('arm-health').className = s.teach_ready ? 'muted' : 'warning';
+        $('arm-pose').textContent = s.robot_pose && s.robot_pose_age < 1 ? s.robot_pose.slice(0,3).map(v => v.toFixed(4)).join(' · ') + ' m' : 'Posa non disponibile';
+        $('arm-tcp').textContent = s.tcp_offset ? s.tcp_offset.slice(0,3).map(v => v.toFixed(4)).join(' · ') + ' m' : '—';
+        $('arm-remote').textContent = d.remote === 'true' ? 'Attivo' : d.remote === 'false' ? 'Disattivo' : '—';
+        $('arm-safety').textContent = d.safety || '—';
+        $('arm-cal').textContent = s.calibration_ready ? 'Salvate per questo TCP' : `${['a8','h8','a1','tray'].filter(slot => s.calibration_draft?.[slot]).length}/4 acquisite`;
+        if (armMode) {
+          $('status').textContent = d.connection || 'Controller non disponibile';
+          $('age').textContent = s.robot_pose_age != null ? `Posa TCP ${s.robot_pose_age.toFixed(1)} s fa` : 'In attesa del TCP';
+          $('dot').className = 'dot ' + (s.teach_ready ? 'good' : 'bad');
+        }
         $('robot-tests').innerHTML = '';
         for (const [label, value] of [
           ['Controller', d.connection], ['Dashboard 29999', d.dashboard_port],
@@ -354,7 +395,7 @@
           $('window-setting').value = s.view_window; $('window-value').textContent = s.view_window === 1 ? '1 fotogramma' : s.view_window + ' fotogrammi';
           $('contrast-setting').value = s.view_contrast; $('contrast-value').textContent = s.view_contrast + '%';
         }
-        $('source').textContent = `Camera: ${s.camera_url}`;
+        $('source').textContent = armMode ? 'Camera in pausa · solo braccio' : `Camera: ${s.camera_url}`;
         if (s.fen !== latestFen) { latestFen = s.fen; $('fen').value = s.fen; }
       } catch (error) {
         serverDisconnected = true;
@@ -363,6 +404,8 @@
         $('detail').textContent = error.message;
       }
     }
+    applyMode();
+    action('camera_mode', {enabled:!armMode});
     setView('board');
     renderFrame();
     refresh();

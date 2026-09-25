@@ -191,6 +191,7 @@ class VisionDashboard:
     def __init__(self, url):
         settings = json.loads(SETTINGS_FILE.read_text(encoding="utf-8")) if SETTINGS_FILE.is_file() else {}
         self.url = url
+        self.camera_enabled = bool(settings.get("camera_enabled", True))
         self.robot_ip = robot_ip
         self.robot_diagnostics = {"connection": "Verifica in corso"}
         try:
@@ -288,6 +289,7 @@ class VisionDashboard:
     def _save_settings(self):
         SETTINGS_FILE.write_text(json.dumps({
             "camera_url": self.url, "robot_ip": self.robot_ip,
+            "camera_enabled": self.camera_enabled,
             "view_window": self.view_filter.window, "view_contrast": self.view_filter.contrast,
             "orientation_corner": self.orientation + 1,
             "orientation_confirmed": self.orientation_confirmed,
@@ -296,6 +298,22 @@ class VisionDashboard:
     def command(self, payload):
         with self.lock:
             kind = payload.get("action")
+            if kind == "camera_mode":
+                enabled = payload.get("enabled")
+                if not isinstance(enabled, bool):
+                    raise ValueError("Modalità camera non valida")
+                if self.camera_enabled != enabled:
+                    self.camera_enabled = enabled
+                    if enabled:
+                        self.tracker = BoardTracker((SIZE, SIZE), periodic_detection=False)
+                        self.view_filter.reset()
+                        self.baseline = None
+                        self._clear_candidate()
+                    else:
+                        self.status = "Camera in pausa"
+                        self.detail = "Modalità solo braccio"
+                    self._save_settings()
+                return {"ok": True}
             if kind == "settings":
                 camera = str(payload["camera_url"]).strip()
                 parsed = urlsplit(camera)
@@ -382,6 +400,7 @@ class VisionDashboard:
             teach_reason = self._teach_gate()
             return {
                 "camera_url": self.url,
+                "camera_enabled": self.camera_enabled,
                 "status": self.status,
                 "detail": self.detail,
                 "frame": self.frame_number,
@@ -597,6 +616,9 @@ class VisionDashboard:
 
     def _camera_loop(self):
         while not self.stop_event.is_set():
+            if not self.camera_enabled:
+                self.stop_event.wait(0.5)
+                continue
             camera_url = self.url
             camera = cv2.VideoCapture(camera_url)
             if not camera.isOpened():
@@ -609,7 +631,7 @@ class VisionDashboard:
             camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             try:
                 while not self.stop_event.is_set():
-                    if self.url != camera_url:
+                    if self.url != camera_url or not self.camera_enabled:
                         break
                     ok, raw = camera.read()
                     if not ok or raw is None:
@@ -620,8 +642,9 @@ class VisionDashboard:
                         self._process_frame(raw, image)
             except Exception as error:
                 with self.lock:
-                    self.status = "Camera da riconnettere"
-                    self.detail = str(error)
+                    if self.camera_enabled:
+                        self.status = "Camera da riconnettere"
+                        self.detail = str(error)
                 time.sleep(0.5)
             finally:
                 camera.release()
