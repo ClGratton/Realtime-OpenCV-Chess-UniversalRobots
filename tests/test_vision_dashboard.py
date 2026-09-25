@@ -12,7 +12,7 @@ import numpy as np
 from image_methods.board_tracker import BoardTrackingError
 from image_methods.find_position_black import MoveDetectionError
 from arm_methods.calculatePosition import calculatePosition
-from robot_calibration import validate_calibration
+from robot_calibration import validate_calibration, require_calibration_for_robot
 from vision_dashboard import BoardViewFilter, GRID_TARGET, VisionDashboard, detect_visible_grid, legal_move_squares
 
 
@@ -30,6 +30,58 @@ def patterned_board():
 
 
 class VisionDashboardTests(unittest.TestCase):
+    def test_freedrive_teaching_captures_stopped_tcp_without_jog_command(self):
+        dashboard = VisionDashboard("test")
+        dashboard.robot_diagnostics = {
+            "connection":"Controller raggiungibile", "checked_at":time.monotonic(),
+            "remote":"true", "robot_mode":"Robotmode: RUNNING",
+            "safety":"Safetystatus: REDUCED", "program":"STOPPED demo.urp",
+            "serial":"20235300765",
+        }
+        dashboard.robot_speed = [0.0] * 6
+        dashboard.tcp_offset = [0.02, 0, 0.22, 0, 0, 0]
+        dashboard.robot_pose_at = time.monotonic()
+        dashboard.pose_stationary_since = time.monotonic() - 1
+        dashboard.robot_pose = [0.2, -0.3, 0.15, 0, 3.14, 0]
+        with self.assertRaisesRegex(ValueError, "Locale/Manuale"):
+            dashboard.command({"action":"capture_pose", "slot":"a8", "tip_confirmed":True})
+        dashboard.robot_diagnostics["remote"] = "false"
+        with self.assertRaisesRegex(ValueError, "Conferma"):
+            dashboard.command({"action":"capture_pose", "slot":"a8"})
+        for slot, pose in (
+            ("a8", [0.2, -0.3, 0.15, 0, 3.14, 0]),
+            ("h8", [0.2, 0.0, 0.15, 0, 3.14, 0]),
+            ("a1", [0.5, -0.3, 0.15, 0, 3.14, 0]),
+            ("tray", [0.35, 0.2, 0.2, 0, 3.14, 0]),
+        ):
+            dashboard.robot_pose = pose
+            dashboard.robot_pose_at = time.monotonic()
+            dashboard.command({"action":"capture_pose", "slot":slot, "tip_confirmed":True})
+        with patch("vision_dashboard.save_calibration", side_effect=validate_calibration) as save:
+            dashboard.command({"action":"calibration"})
+        saved = save.call_args.args[0]
+        self.assertEqual(saved["serial"], "20235300765")
+        self.assertEqual(saved["robot_ip"], dashboard.robot_ip)
+        self.assertEqual(saved["tray"], [0.35, 0.2, 0.2])
+        self.assertEqual(saved["tcp_offset"], [0.02, 0, 0.22, 0, 0, 0])
+        self.assertFalse(dashboard.draft_dirty)
+
+    def test_calibration_refuses_a_different_robot_serial(self):
+        saved = {"robot_ip":"192.168.17.168", "serial":"20235300765"}
+        with patch("robot_calibration.load_calibration", return_value=saved), \
+             patch("robot_calibration.read_robot_serial", return_value="other"):
+            with self.assertRaisesRegex(RuntimeError, "altro controller"):
+                require_calibration_for_robot("192.168.17.168")
+
+    def test_calibration_refuses_changed_tcp(self):
+        saved = {"robot_ip":"192.168.17.168", "serial":"20235300765",
+                 "tcp_offset":[0.02, 0, 0.22, 0, 0, 0]}
+        with patch("robot_calibration.load_calibration", return_value=saved), \
+             patch("robot_calibration.read_robot_serial", return_value="20235300765"), \
+             patch("robot_calibration.read_robot_tcp_offset", return_value=[0, 0, 0, 0, 0, 0]):
+            with self.assertRaisesRegex(RuntimeError, "TCP attivo"):
+                require_calibration_for_robot("192.168.17.168")
+
     def test_live_filter_settings_survive_dashboard_restart(self):
         with tempfile.TemporaryDirectory() as directory, \
              patch("vision_dashboard.SETTINGS_FILE", Path(directory) / "settings.json"):
