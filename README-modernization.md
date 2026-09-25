@@ -113,9 +113,9 @@ the controller or TCP offset changes. Pick-and-place commands are checked
 against the taught minimum TCP height before motion, including the return
 home pose; all generated Cartesian waypoints stay above that limit.
 Select **Solo braccio** or open `http://127.0.0.1:8765/?mode=arm` to show live
-TCP pose, controller status and the Freedrive calibration link without a phone
-feed. The dashboard pauses camera connection attempts in this mode and resumes
-them when returning to **Vista scacchi**. An unpowered arm remains read-only;
+TCP pose, controller status and the Freedrive calibration link. Video capture
+is controlled separately with **Attiva video / Metti video in pausa**; when the
+phone is on, its live preview can appear alongside the arm. An unpowered arm remains read-only;
 capture buttons enable only after the pendant reports a running, stationary
 robot in Local mode with a valid active TCP.
 

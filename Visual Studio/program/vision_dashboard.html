@@ -75,11 +75,13 @@
     .arm-card { display: none; }
     .arm-mode .layout { grid-template-columns: 1fr; }
     .arm-mode .stage, .arm-mode .chess-card { display: none; }
+    .arm-mode.camera-preview .layout { grid-template-columns: minmax(560px, 1.4fr) minmax(390px, .9fr); }
+    .arm-mode.camera-preview .stage { display: block; }
     .arm-mode .arm-card { display: block; width: min(950px, 100%); }
     .arm-mode .rail { display: block; }
     .arm-pose { font-size: clamp(23px, 3vw, 36px); font-variant-numeric: tabular-nums; font-weight: 750; color: var(--green); overflow-wrap: anywhere; }
     .footer { color: var(--muted); font-size: 13px; margin-top: 17px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
-    @media (max-width: 1060px) { .layout { grid-template-columns: 1fr; } .rail { grid-template-columns: repeat(2, minmax(280px, 1fr)); } .video-wrap { height: min(65vh, 740px); } }
+    @media (max-width: 1060px) { .layout, .arm-mode.camera-preview .layout { grid-template-columns: 1fr; } .rail { grid-template-columns: repeat(2, minmax(280px, 1fr)); } .video-wrap { height: min(65vh, 740px); } }
     @media (max-width: 700px) { .page { padding: 13px; } header { align-items: start; flex-direction: column; } .rail { grid-template-columns: 1fr; } .stage-head { flex-direction: column; align-items: stretch; } .video-wrap { min-height: 300px; height: 52vh; } }
   </style>
 </head>
@@ -115,9 +117,10 @@
           <div class="row"><span>TCP attivo rispetto alla flangia</span><strong id="arm-tcp">—</strong></div>
           <div class="row"><span>Controllo remoto</span><strong id="arm-remote">—</strong></div>
           <div class="row"><span>Sicurezza</span><strong id="arm-safety">—</strong></div>
+          <div class="row"><span>Video telefono</span><strong id="arm-camera">—</strong></div>
           <div class="row"><span>Quattro posizioni</span><strong id="arm-cal">—</strong></div>
-          <div class="controls"><button onclick="openCalibration()">Apri calibrazione Freedrive</button><button onclick="openSettings()">Diagnostica e IP</button></div>
-          <p class="muted" style="margin-top:12px">La fotocamera può rimanere spenta. Questa vista legge il controller e non invia movimenti.</p>
+          <div class="controls"><button onclick="openCalibration()">Apri calibrazione Freedrive</button><button id="arm-camera-button" onclick="toggleArmCamera()">Attiva video</button><button onclick="openSettings()">Diagnostica e IP</button></div>
+          <p class="muted" style="margin-top:12px">Video e lettura del braccio funzionano indipendentemente. Questa vista non invia movimenti.</p>
         </section>
         <section class="card hero chess-card">
           <div id="turn-role" class="turn-badge">Turno in attesa</div>
@@ -194,17 +197,20 @@
     let filterTimer = null;
     let settingsLoaded = false;
     let armMode = new URLSearchParams(location.search).get('mode') === 'arm' || localStorage.getItem('dashboard-mode') === 'arm';
+    let cameraEnabled = false;
     const $ = id => document.getElementById(id);
     const frameContext = $('feed').getContext('2d', {alpha:false});
     function applyMode() {
       document.body.classList.toggle('arm-mode', armMode);
+      document.body.classList.toggle('camera-preview', armMode && cameraEnabled);
       $('mode-button').textContent = armMode ? 'Vista scacchi' : 'Solo braccio';
       $('mode-button').classList.toggle('selected', armMode);
       $('page-title').textContent = armMode ? 'Braccio UR · stato e calibrazione' : 'Scacchi, vista del computer';
       $('page-subtitle').textContent = armMode ? 'Lettura in tempo reale del TCP e insegnamento delle posizioni con Freedrive.' : 'Quello che la camera vede, quello che il programma riconosce, quello che Stockfish suggerisce.';
       localStorage.setItem('dashboard-mode', armMode ? 'arm' : 'chess');
     }
-    function switchMode() { armMode = !armMode; applyMode(); action('camera_mode', {enabled:!armMode}); restartFeed(); refresh(); }
+    function switchMode() { armMode = !armMode; applyMode(); restartFeed(); refresh(); }
+    async function toggleArmCamera() { if (await action('camera_mode', {enabled:!cameraEnabled})) { await refresh(); restartFeed(); } }
 
     function framePath() {
       return view === 'raw' ? '/frame/raw.jpg'
@@ -218,7 +224,7 @@
     }
 
     async function renderFrame() {
-      if (armMode) { setTimeout(renderFrame, 1000); return; }
+      if (armMode && !cameraEnabled) { setTimeout(renderFrame, 1000); return; }
       const generation = frameGeneration;
       const abort = new AbortController();
       frameAbort = abort;
@@ -324,6 +330,7 @@
         const response = await fetch('/api/state', {cache:'no-store'});
         if (!response.ok) throw new Error('Server non disponibile');
         const s = await response.json();
+        if (cameraEnabled !== s.camera_enabled) { cameraEnabled = s.camera_enabled; applyMode(); restartFeed(); }
         if (serverDisconnected) {
           serverDisconnected = false;
           restartFeed();
@@ -344,6 +351,8 @@
         $('arm-tcp').textContent = s.tcp_offset ? s.tcp_offset.slice(0,3).map(v => v.toFixed(4)).join(' · ') + ' m' : '—';
         $('arm-remote').textContent = d.remote === 'true' ? 'Attivo' : d.remote === 'false' ? 'Disattivo' : '—';
         $('arm-safety').textContent = d.safety || '—';
+        $('arm-camera').textContent = s.camera_enabled ? (s.age_seconds != null && s.age_seconds < 3 ? 'Live' : 'Ricerca feed') : 'In pausa';
+        $('arm-camera-button').textContent = s.camera_enabled ? 'Metti video in pausa' : 'Attiva video';
         $('arm-cal').textContent = s.calibration_ready ? 'Salvate per questo TCP' : `${['a8','h8','a1','tray'].filter(slot => s.calibration_draft?.[slot]).length}/4 acquisite`;
         if (armMode) {
           $('status').textContent = d.connection || 'Controller non disponibile';
@@ -395,7 +404,7 @@
           $('window-setting').value = s.view_window; $('window-value').textContent = s.view_window === 1 ? '1 fotogramma' : s.view_window + ' fotogrammi';
           $('contrast-setting').value = s.view_contrast; $('contrast-value').textContent = s.view_contrast + '%';
         }
-        $('source').textContent = armMode ? 'Camera in pausa · solo braccio' : `Camera: ${s.camera_url}`;
+        $('source').textContent = s.camera_enabled ? `Camera: ${s.camera_url}` : 'Camera in pausa';
         if (s.fen !== latestFen) { latestFen = s.fen; $('fen').value = s.fen; }
       } catch (error) {
         serverDisconnected = true;
@@ -405,7 +414,6 @@
       }
     }
     applyMode();
-    action('camera_mode', {enabled:!armMode});
     setView('board');
     renderFrame();
     refresh();
